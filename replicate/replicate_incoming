@@ -1,0 +1,201 @@
+#! /usr/bin/perl
+
+use strict;
+$| = 1;
+
+#------------------------------------------------------------
+# replicate_incoming
+#
+# A script to take raw DYFI entry files (created by
+# response.php) and copy them to different directories
+# for each DYFI backend server.
+#
+# Usage: This script is meant to be run periodically from
+# the crontab, preferably every minute.
+# The script will check whether another instance is running,
+# and halt if it finds one. This ensures that it will run
+# reliably even with a restart (hopefully) 
+#------------------------------------------------------------
+
+#============================================================
+# CONFIGURABLE SECTION
+#============================================================
+
+#------------------------------------------------------------
+# Ensure the correct path to these binaries:
+#------------------------------------------------------------
+my $bin = '/bin';
+my $cp = "$bin/cp";
+my $mv = "$bin/mv";
+my $ps = "$bin/ps";
+my $grep = "$bin/grep";
+
+# List of DYFI backend servers. (Backup directory is there
+# to ensure we don't lose any data if something really bad
+# happens to the backends.)
+my @servers = qw( 
+          backendserver1.gov
+          backendserver2.gov
+          backendserver3.gov
+          backup
+  );
+
+# Where this script exists. The PID file will be created here.
+
+my $home_dir = "[apps]/earthquake-dyfi-response/replicate";
+my $pidfile = "$home_dir/replicate.pid";
+
+# Directory where raw entry files exist after being created
+# by responses.php. Make sure this directory exists.
+
+my $NODE='thisnode';
+# Note that $data_dir is different with each node
+my $data_dir = "[data]/earthquake-dyfi-response";
+my $input_dir = "$data_dir/incoming";
+
+# Directory to put the replicated raw entry files. (%s is the
+# placeholder for each backend server. There will be one 
+# incoming.[server] directory for each server.
+# The script will attempt to create the server directories
+# if they don't exist.
+
+my $output_dir = $data_dir;
+my $out_template = "$output_dir/incoming.%s";
+
+# Die gracefully if this script is more than 24 hours old.
+my $age_too_old = 3600*24; 
+
+# Pause for 5 seconds when the incoming directory is empty 
+my $t_sleep = 5;
+
+
+
+#============================================================
+# END CONFIGURABLE SECTION
+#============================================================
+
+exit_if_process_running();
+create_pidfile();
+
+my $t = time;
+my $time = scalar localtime();
+print "Starting $time\n";
+
+my @outputdirs;
+foreach my $server (@servers) {
+  my $dir = sprintf $out_template,$server;
+  mkdir $dir,0775 unless (-d $dir);
+  push @outputdirs,$dir;
+}
+
+while (1) {
+
+  my @files = glob "$input_dir/entry.*";  
+  unless (@files) {
+
+    sleep $t_sleep;
+    exit_if_too_old();    
+    exit_if_not_current();
+    next;
+  }
+
+  # At this point we are reasonably sure nobody else
+  # will touch the entry files
+
+  $time = scalar localtime();
+  print "Got ",scalar @files," entries at $time\n";
+  my $count = replicate(\@files,\@outputdirs);
+  print "Sent $count entries to the server dirs.\n";
+}
+
+#------------------------------------------------
+# End main loop
+#------------------------------------------------
+
+sub replicate {
+  my ($files,$outputs) = @_;
+  my @dest;
+
+  foreach my $src (@$files) {
+    my $flag;
+
+    my $short = $src;
+    $short =~ s{^$input_dir\/?}{};
+    print "$short\n";
+ 
+    foreach my $outdir (@$outputs) {
+      my $tmp = "$outdir/tmp.$short";
+      my $dest = "$outdir/$short";
+
+      system($cp,'--preserve=timestamps',$src,$tmp) == 0 
+        or die "$cp $src $tmp failed: $?";
+      system($mv,$tmp,$dest) == 0 
+        or die "$mv $tmp $dest failed: $?";
+    }
+    unlink($src);
+  }
+  return (scalar @$files);
+}
+
+sub exit_if_process_running {
+  my $pid = $$;
+  my $me = $0;
+
+  my $oldpid = check_pidfile();
+  if ($oldpid) {
+    my $psoutput = `$ps -A | $grep $oldpid`;
+    if ($psoutput =~ /^\s*$oldpid .*replicate/) {
+      # pidfile is current, and another process is running.
+      # Exit silently.
+      exit;
+    }
+
+    print "Found stale pidfile $oldpid, ignoring.\n";
+  }
+}
+
+sub exit_if_not_current {
+  my $oldpid = check_pidfile();
+  if ($oldpid and $oldpid != $$) {
+    print "I am no longer the current process. Stopping.\n";
+    unlink $pidfile;
+    exit;
+  }
+}
+
+sub exit_if_too_old {
+
+  my $age = time - $t;
+  return if ($age < $age_too_old);
+
+  print "Process too old, stopping.\n";
+  unlink $pidfile;
+  exit;
+
+}
+
+#----------------------------------
+# Subroutines to handle PID file
+#----------------------------------
+
+sub create_pidfile {
+  my $pid = $$;
+  print "Creating pidfile with process $pid.\n";
+  open OUT,">$pidfile" or die "Cannot create $pidfile";
+  print OUT "$pid" or die "Cannot print to $pidfile";
+  close OUT or die "Cannot close $pidfile";
+ 
+  return;
+} 
+
+sub check_pidfile {
+  if (-e $pidfile) {
+    open PID,$pidfile;
+    $oldpid=<PID>;
+    close PID;
+    
+    chomp $oldpid;
+    return $oldpid;
+  }
+}
+
