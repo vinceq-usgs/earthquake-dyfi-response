@@ -194,6 +194,7 @@
     $eventid = $data['eventid'];
 
     $text = $T['THANKS_LABEL'];
+      
     $OUTPUT = array (
       'eventid' => $T['EVENTID_LABEL'],
       'your_cdi' => $T['ESTIMATED_II_LABEL'],
@@ -249,16 +250,18 @@
 ";
     }
     else {
-      if ($eventid <> 'unknown') {
-        $text .= "   
-<p align=center><a href='$REAL_HOST/earthquakes/dyfi/events/$_POST[network]/$_POST[code]/us/index.html'>
-$T[BACK_EVENT_LABEL]</p>
+      if (!isset($eventid) or $eventid == '' or $eventid == 'unknown') {
+        $text .= "
+<p><a href='$REAL_HOST/data/dyfi'>$T[BACK_HOMEPAGE_LABEL]</a></p>
 ";
+
       }
       else {
-        $text .= "
-<p><a href='$REAL_HOST/earthquakes/dyfi/index.html'>$T[BACK_HOMEPAGE_LABEL]</a></p>
+        $text .= "   
+<p align=center><a href='$REAL_HOST/earthquakes/dyfi/events/$eventid/$_POST[network]/$_POST[code]/us/index.html'>
+$T[BACK_EVENT_LABEL]</p>
 ";
+
       }
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+	print("Now in functions.inc.php");
+
 	// Is this file necessary? response.php is looking for a copy
 	// in the template directory
 
