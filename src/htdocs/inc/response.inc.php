@@ -17,86 +17,6 @@
     return $net . $evid;
   }
 
-  function lookup_cdi_file() { 
-    $evid = $_POST['code'];
-    $net = $_POST['network'];
-    if (is_null($evid) or $evid == 'unknown') return;
-
-    $file = '';
-    if ($loc = $_POST['ciim_zip']) {
-      $file = "events/$net/$evid/us/cdi_zip.xml";
-    }
-    elseif ($loc = get_lookup_location()) {
-      $file = "events/$net/$evid/us/cdi_zip.xml";
-    }
-//    print "Looking for file $file.<br>\n";
-    if (is_null($file) or !file_exists($file)) {
-      return;
-    }
-
-    // Now start parsing XML file
-
-    $xml = new XMLReader();
-    $xml->open($file);
-
-    // Advance to correct location
-
-    while ($xml->read()) {
-      if ($xml->name != 'location' or 
-          $xml->nodeType != 1) continue;
-
-      $name = $xml->getAttribute('name');
-      if ($name == $loc) break;
-    }
-
-    // Now extract cdi and nresp values
-
-    $cdi = null;
-    $nresp = null;
-    $result = null;
- 
-    while($xml->read()) {
-
-      $name = $xml->name;
-      $type = $xml->nodeType;
-
-      if ($name == 'cdi' and $type == 1) {
-        $xml->read();
-        $cdi = $xml->value;
-      }
-
-      if ($name == 'nresp' and $type == 1) {
-        $xml->read();
-        $nresp = $xml->value;
-      }
-
-      if ($name == 'location' and $type == 15) break;
-    }
-
-    $xml->close();  
-
-    if ($cdi and $nresp) $result = array(
-      'cdi'     => $cdi,
-      'rom_cdi' => _rom($cdi),
-      'nresp'   => $nresp);
-    return($result); 
-  }
-
-  function get_lookup_location() {
-    $city = _strip_code($_POST['ciim_city']);
-    $region = _strip_code($_POST['ciim_region']);
-    $country = _strip_code($_POST['ciim_country']);
- 
-    if ($city and $region and $country)
-    return "$city::$region::$country";
-  }
-
-  function _strip_code($string) { 
-    $c = stripos($string,' ');
-    if (!$c) return;
-
-    return substr($string,$c+1);
-  }
 
   function _rom($ii) {
     if ($ii <= 1) return 'I';
@@ -187,84 +107,95 @@
     return 0;
   }
 
-  function output($T,$data) {
-    $REAL_HOST = 'https://earthquake.usgs.gov';
+  //
+  //
+  // These functions are for future or not-yet-implemented functionality
+  //
+  //
 
-    $windowtype = $data['windowtype'];
-    $eventid = $data['eventid'];
 
-    $text = $T['THANKS_LABEL'];
-      
-    $OUTPUT = array (
-      'eventid' => $T['EVENTID_LABEL'],
-      'your_cdi' => $T['ESTIMATED_II_LABEL'],
-      'all_cdi' => $T['COMMUNITY_II_LABEL'],
-      'nresp' => $T['NRESP_LABEL'],
-      'ciim_zip' => $T['ZIPCODE_LABEL'],
-      'ciim_city' => $T['CITY_LABEL'],
-      'ciim_region' => $T['REGION_LABEL'],
-      'ciim_country' => $T['COUNTRY_LABEL'],
-      'fldContact_name' => $T['NAME_LABEL'],
-      'fldContact_email' => $T['EMAIL_LABEL'],
-      'fldContact_phone' => $T['PHONE_LABEL'],
-      'ciim_address' => $T['ADDRESS_LABEL'],
-      'ciim_time' => $T['EVENTTIME_LABEL'],
+  function lookup_cdi_file() { 
+    $evid = $_POST['code'];
+    $net = $_POST['network'];
+    if (is_null($evid) or $evid == 'unknown') return;
 
-      'filename' => "Output",
-      'form_version' => "Form version",
-      'server' => "Server",
-    ); 
-
-    $align = ($windowtype == 'enabled') ? 'center' : 'left'; 
-    $text .= sprintf("<div align=$align><table cellpadding=\"4\" border=\"0\" " .
-                    "cellspacing=\"4\" " .  "id=\"%s\">", 'Output');
-
-    $counter = 0;
-    foreach($OUTPUT as $key => $desc) {
-      $val = '';
-      if (!array_key_exists($key,$data)) continue;
-      $val = $data[$key];
-      if (!$val) continue;  
-
-       if ($key == 'ciim_city' or $key == 'ciim_region'
-           or $key == 'ciim_country') {
-         $val = _strip_code($val);
-         if (!$val) continue; 
-       }
-      // Loop over results and append the rows
-      $class = ($counter++%2==0)?'alt':'';
-      $text .= sprintf("
-        <tr>
-          <td class='$class'><b>%s</b></td>
-          <td class='$class'>&nbsp;</td>
-          <td class='$class'>%s</td>
-        </tr>", 
-        $desc, htmlspecialchars($val));
-    } 
-
-    $text .= "</tbody></table></div>";
-
-    if ($windowtype == 'enabled') {
-      $text .= "
-<center><a href='javascript:window.close()'>$T[CLOSE_LABEL]</a></center>
-";
+    $file = '';
+    if ($loc = $_POST['ciim_zip']) {
+      $file = "events/$net/$evid/us/cdi_zip.xml";
     }
-    else {
-      if (!isset($eventid) or $eventid == '' or $eventid == 'unknown') {
-        $text .= "
-<p><a href='$REAL_HOST/data/dyfi'>$T[BACK_HOMEPAGE_LABEL]</a></p>
-";
-
-      }
-      else {
-        $text .= "   
-<p align=center><a href='$REAL_HOST/earthquakes/dyfi/events/$eventid/$_POST[network]/$_POST[code]/us/index.html'>
-$T[BACK_EVENT_LABEL]</p>
-";
-
-      }
+    elseif ($loc = get_lookup_location()) {
+      $file = "events/$net/$evid/us/cdi_zip.xml";
+    }
+//    print "Looking for file $file.<br>\n";
+    if (is_null($file) or !file_exists($file)) {
+      return;
     }
 
-    print $text . "\n";
+    // Now start parsing XML file
+
+    $xml = new XMLReader();
+    $xml->open($file);
+
+    // Advance to correct location
+
+    while ($xml->read()) {
+      if ($xml->name != 'location' or 
+          $xml->nodeType != 1) continue;
+
+      $name = $xml->getAttribute('name');
+      if ($name == $loc) break;
+    }
+
+    // Now extract cdi and nresp values
+
+    $cdi = null;
+    $nresp = null;
+    $result = null;
+ 
+    while($xml->read()) {
+
+      $name = $xml->name;
+      $type = $xml->nodeType;
+
+      if ($name == 'cdi' and $type == 1) {
+        $xml->read();
+        $cdi = $xml->value;
+      }
+
+      if ($name == 'nresp' and $type == 1) {
+        $xml->read();
+        $nresp = $xml->value;
+      }
+
+      if ($name == 'location' and $type == 15) break;
+    }
+
+    $xml->close();  
+
+    if ($cdi and $nresp) $result = array(
+      'cdi'     => $cdi,
+      'rom_cdi' => _rom($cdi),
+      'nresp'   => $nresp);
+    return($result); 
   }
+
+
+  function get_lookup_location() {
+    $city = _strip_code($_POST['ciim_city']);
+    $region = _strip_code($_POST['ciim_region']);
+    $country = _strip_code($_POST['ciim_country']);
+ 
+    if ($city and $region and $country)
+    return "$city::$region::$country";
+  }
+
+
+  function _strip_code($string) { 
+    $c = stripos($string,' ');
+    if (!$c) return;
+
+    return substr($string,$c+1);
+  }
+
+
 ?>

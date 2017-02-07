@@ -1,6 +1,5 @@
 <?php
 
-include_once 'inc/functions.inc.php';
 include_once 'inc/response.inc.php';
 
 // defines the $CONFIG hash of configuration variables
@@ -155,9 +154,6 @@ if (!isset($ini)) {
 	';
 
 } // if (!isset($TEMPLATE))
-
-
-
 
 
 $data = $_POST;
