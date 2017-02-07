@@ -9,9 +9,11 @@
 
   function eventid() {
 
+    if (!isset($_POST['code'])) return 'unknown';
+
     $evid = $_POST['code'];
     $net = $_POST['network'];
-
+    if ($evid=='') return 'unknown';
     if ($net == 'Unknown' and $evid == 'Event') return 'unknown';
     if ($evid == 'unknown') return 'unknown';
     return $net . $evid;
