@@ -13,8 +13,32 @@ $PROMPTS = array(
     'prompt' => 'URL Path for application',
     'default' => '/mount/path',
     'secure' => false
+  ),
+  'SERVER_SHORTNAME' => array(
+    'prompt' => 'Short name for this acquisition server (e.g. dev)',
+    'default' => 'dev',
+    'secure' => false
+  ),
+  'INCOMING_DIR' => array(
+    'prompt' => 'directory to write incoming entries',
+    'default' => '/my/incoming',
+    'secure' => false
+  ),
+  'LOG_DIR' => array(
+    'prompt' => 'directory to write process logs and a copy of the latest entry',
+    'default' => '/my/log',
+    'secure' => false
+  ),
+  'ARCGIS_CLIENT_ID' => array(
+    'prompt' => 'ArcGIS Client ID for on-the-fly geocoding of responses',
+    'default' => 'my_id',
+    'secure' => false
+  ),
+  'ARCGIS_CLIENT_SECRET' => array(
+    'prompt' => 'ArcGIS Secret Password',
+    'default' => 'password',
+    'secure' => false
   )
-
 );
 
 

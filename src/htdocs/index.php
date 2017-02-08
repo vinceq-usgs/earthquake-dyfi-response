@@ -23,3 +23,5 @@ if (!isset($TEMPLATE)) {
     </a>
   </noscript>
 </div>
+<a href="testform.php">Go to test form.</a>
+

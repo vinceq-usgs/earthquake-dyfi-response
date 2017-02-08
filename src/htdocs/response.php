@@ -23,6 +23,7 @@ if (!isset($TEMPLATE)) {
 //       error_reporting( E_ERROR | E_CORE_ERROR );
 
 // Firstly validate the form
+
 if (!isset($_POST['fldSituation_felt'])) {
 	print '<div style="border: 3px dashed #E88;width: 762px;background: '.
 	'#EAA;margin: 8px 0 0 0;padding:10px;">Required entries were not provided!' .
@@ -36,14 +37,14 @@ if (!isset($ini)) {
 	// Process the ini filefile for directory locations and 
 	// credentials to the ArcGISOnline server.
 
-	$ini = parse_ini_file('../conf/response.ini');
+	$ini = parse_ini_file('../conf/config.ini');
 
-	$client_id= $ini['arcgis_client_id'];
-	$client_secret = $ini['arcgis_client_secret'];
+	$client_id= $ini['ARCGIS_CLIENT_ID'];
+	$client_secret = $ini['ARCGIS_CLIENT_SECRET'];
 
-	$server = $ini['server'];
-	$incoming_dir = $ini['incoming_dir'];
-	$log_dir = $ini['log_dir'];
+	$server = $ini['SERVER_SHORTNAME'];
+	$incoming_dir = $ini['INCOMING_DIR'];
+	$log_dir = $ini['LOG_DIR'];
 
 	$home_dir = dirname(__FILE__);
 
