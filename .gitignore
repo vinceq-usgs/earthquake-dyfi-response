@@ -8,4 +8,3 @@ src/conf/httpd.conf
 test/data/incoming/entry.*
 test/data/incoming.*
 test/log/latest_entry.post
-log/latest_entry.post
