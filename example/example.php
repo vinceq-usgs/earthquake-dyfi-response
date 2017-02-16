@@ -13,5 +13,6 @@ if (!isset($TEMPLATE)) {
 
 
 <p class="alert info">
-  Choose an example from the left navigation.
+  Example of the <em>alert info</em> class.
 </p>
+
