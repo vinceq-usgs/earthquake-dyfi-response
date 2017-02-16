@@ -21,12 +21,12 @@ $PROMPTS = array(
   ),
   'INCOMING_DIR' => array(
     'prompt' => 'directory to write incoming entries',
-    'default' => '/my/incoming',
+    'default' => '../../../test/data/incoming',
     'secure' => false
   ),
   'LOG_DIR' => array(
     'prompt' => 'directory to write process logs and a copy of the latest entry',
-    'default' => '/my/log',
+    'default' => '../../../test/log',
     'secure' => false
   ),
   'ARCGIS_CLIENT_ID' => array(
