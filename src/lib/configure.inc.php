@@ -1,6 +1,6 @@
 <?php
 
-$REPO_DIR = 'myrepos/earthquake-dyfi-response';
+$REPO_DIR = 'my_repos/earthquake-dyfi-response';
 
 // This data structure allows for simple configuration prompts
 $PROMPTS = array(
@@ -39,10 +39,10 @@ $PROMPTS = array(
     'prompt' => 'ArcGIS Secret Password',
     'default' => 'password',
     'secure' => true
-  )
+  ),
   'BACKEND_SERVERS' => array(
-    'prompt' => 'space delimited list of backend servers',
-    'default' => 'backendserver1.gov backendserver2.gov',
+    'prompt' => 'Comma-delimited list of backend servers',
+    'default' => 'backendserver1.gov,backendserver2.gov',
     'secure' => true
   ),
     
@@ -134,9 +134,20 @@ function createdir ($dir) {
   }
 }
 
-createdir($CONFIG['DATA_DIR']);
-createdir($CONFIG['DATA_DIR'] . "/incoming");
 createdir($CONFIG['LOG_DIR']);
+
+$datadir = $CONFIG['DATA_DIR'];
+createdir($datadir);
+createdir("$datadir/incoming");
+
+$servers = explode(',',$CONFIG['BACKEND_SERVERS']);
+
+foreach ($servers as $server) {
+  $dir = "$datadir/incoming.$server";
+  createdir($dir);
+}
+
+createdir("$datadir/incoming.backup");
 
 // Close the file
 fclose($FP_CONFIG);
