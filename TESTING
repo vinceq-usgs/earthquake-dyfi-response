@@ -1,0 +1,20 @@
+For testing:
+
+1. cd to the root of this repository
+2. Run src/lib/pre-install
+3. Run grunt
+
+This will open three windows in your browser.
+Files in the htdocs directory (e.g. index.php) will show up here:
+http://localhost:8880/dyfi/index.php
+
+Editing the files in src and test directories will automagically compile in the [repo]/.build/ directory.
+
+When done, make sure to exit out of the 'grunt' process (Ctrl-C).
+
+The default test data directory is [thisrepo]/test/data. Change this with the pre-install script.
+
+Note for actual production, this repo should be installed in the application directory. The data directory should be in the data directory.
+
+To add destination servers, rerun pre-install OR create the incoming.newServer directory and add that line to .build/src/conf/config.ini
+
