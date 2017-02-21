@@ -43,10 +43,10 @@ if (!isset($ini)) {
 	$client_secret = $ini['ARCGIS_CLIENT_SECRET'];
 
 	$server = $ini['SERVER_SHORTNAME'];
-	$incoming_dir = $ini['INCOMING_DIR'];
+	$data_dir = $ini['DATA_DIR'];
 	$log_dir = $ini['LOG_DIR'];
-
-	$home_dir = dirname(__FILE__);
+        
+        $incoming_dir = $data_dir . "/incoming";
 
 	$eventid = eventid();
 	$windowtype = param('windowtype');

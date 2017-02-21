@@ -1,5 +1,6 @@
 <?php
 
+$REPO_DIR = 'myrepos/dyfi-responses';
 
 // This data structure allows for simple configuration prompts
 $PROMPTS = array(
@@ -19,14 +20,14 @@ $PROMPTS = array(
     'default' => 'dev',
     'secure' => false
   ),
-  'INCOMING_DIR' => array(
-    'prompt' => 'directory to write incoming entries',
-    'default' => '../../../test/data/incoming',
+  'DATA_DIR' => array(
+    'prompt' => 'directory to write incoming dirs',
+    'default' => $REPO_DIR . '/test/data',
     'secure' => false
   ),
   'LOG_DIR' => array(
-    'prompt' => 'directory to write process logs and a copy of the latest entry',
-    'default' => '../../../test/log',
+    'prompt' => 'directory to write logs and a copy of the latest entry',
+    'default' => $REPO_DIR . '/test/log',
     'secure' => false
   ),
   'ARCGIS_CLIENT_ID' => array(
@@ -111,14 +112,25 @@ foreach ($PROMPTS as $key => $item) {
     $default = $item['default'];
   }
 
+  $CONFIG[$key] = $default;
+
   fwrite($FP_CONFIG, $key . ' = "' .
       configure($item['prompt'], $default, isset($item['secure']) ? $item['secure'] : false) .
       "\"\n");
 }
 
-
 // Do any custom prompting here
 
+function createdir ($dir) {
+  if (!is_dir($dir)) {
+    echo "Creating directory $dir\n";
+    mkdir($dir, 0777, true);
+  }
+}
+
+createdir($CONFIG['DATA_DIR']);
+createdir($CONFIG['DATA_DIR'] . "/incoming");
+createdir($CONFIG['LOG_DIR']);
 
 // Close the file
 fclose($FP_CONFIG);
