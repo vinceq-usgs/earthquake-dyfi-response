@@ -12,4 +12,9 @@ Editing the files in src and test directories will automagically compile in the 
 
 When done, make sure to exit out of the 'grunt' process (Ctrl-C).
 
-The default test data directory is in [thisrepo]/test/. Change this with the pre-install script.
+The default test data directory is [thisrepo]/test/data. Change this with the pre-install script.
+
+Note for actual production, this repo should be installed in the application directory. The data directory should be in the data directory.
+
+To add destination servers, rerun pre-install OR create the incoming.newServer directory and add that line to .build/src/conf/config.ini
+

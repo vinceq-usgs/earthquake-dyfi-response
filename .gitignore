@@ -5,6 +5,8 @@ node_modules
 *.sublime-workspace
 src/conf/config.ini*
 src/conf/httpd.conf
-test/data/incoming/entry.*
-test/data/incoming.*
-test/log/latest_entry.post
+test/data
+test/log
+*.pid
+*.swp
+
