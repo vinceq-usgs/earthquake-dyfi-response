@@ -1,6 +1,6 @@
 <?php
 
-$REPO_DIR = 'myrepos/dyfi-responses';
+$REPO_DIR = 'myrepos/earthquake-dyfi-response';
 
 // This data structure allows for simple configuration prompts
 $PROMPTS = array(
@@ -38,8 +38,14 @@ $PROMPTS = array(
   'ARCGIS_CLIENT_SECRET' => array(
     'prompt' => 'ArcGIS Secret Password',
     'default' => 'password',
-    'secure' => false
+    'secure' => true
   )
+  'BACKEND_SERVERS' => array(
+    'prompt' => 'space delimited list of backend servers',
+    'default' => 'backendserver1.gov backendserver2.gov',
+    'secure' => true
+  ),
+    
 );
 
 
