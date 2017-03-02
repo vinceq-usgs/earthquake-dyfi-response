@@ -1,6 +1,7 @@
 <?php
 
-$REPO_DIR = __DIR__;
+// Assumes this file is in [reponame]/src/lib/
+$REPO_DIR = dirname(dirname(__DIR__)); 
 
 // This data structure allows for simple configuration prompts
 $PROMPTS = array(
@@ -126,6 +127,7 @@ function createdir ($dir) {
   if (!is_dir($dir)) {
     echo "Creating directory $dir\n";
     mkdir($dir, 0777, true);
+    chmod($dir,0777);
   }
 }
 
