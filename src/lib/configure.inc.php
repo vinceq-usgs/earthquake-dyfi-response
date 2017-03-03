@@ -41,7 +41,11 @@ $PROMPTS = array(
     'default' => 'backendserver1.gov,backendserver2.gov',
     'secure' => false
   ),
-    
+  'TEST_RESPONSE_URL' => array(
+    'prompt' => 'Destination for testing response.php',
+    'default' => 'http://localhost:8880/response.php',
+    'secure' => false
+  ),
 );
 
 
