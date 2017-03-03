@@ -1,0 +1,13 @@
+.DS_Store
+.build
+dist
+node_modules
+*.sublime-workspace
+src/conf/config.ini*
+src/conf/httpd.conf
+test/data
+test/log
+*.pid
+*.swp
+*.log
+

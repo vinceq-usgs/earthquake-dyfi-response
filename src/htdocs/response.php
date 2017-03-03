@@ -1,7 +1,31 @@
 <?php
 
-include_once $_SERVER['DOCUMENT_ROOT'] . '/template.inc.php';
+include_once 'inc/response.inc.php';
 
+// defines the $CONFIG hash of configuration variables
+include_once '../conf/config.inc.php';
+
+if (!isset($ini)) {
+
+	// Process the ini filefile for directory locations and 
+	// credentials to the ArcGISOnline server.
+
+	$ini = parse_ini_file('../conf/config.ini');
+	$data_dir = $ini['WRITE_DIR'];
+	$log_dir = "$data_dir/log";
+}
+        
+$rawData = file_get_contents("php://input");
+file_put_contents("$log_dir/raw.input",$rawData);
+
+if (!isset($TEMPLATE)) {
+
+  $TITLE = 'DYFI Questionnaire Result v{{VERSION}}';
+  $NAVIGATION = true;
+
+  include 'template.inc.php';
+        
+}
 
 // This script must do 4 things:
 // 1. Write to a file
@@ -12,34 +36,37 @@ include_once $_SERVER['DOCUMENT_ROOT'] . '/template.inc.php';
 //       error_reporting( E_ERROR | E_CORE_ERROR );
 
 // Firstly validate the form
+
 if (!isset($_POST['fldSituation_felt'])) {
-	if (!isset($TEMPLATE)) {
-		$TITLE = "DYFI Response Results";
-		include_once $_SERVER['DOCUMENT_ROOT'] . "/template/template.inc.php";
-	}
 	print '<div style="border: 3px dashed #E88;width: 762px;background: '.
-			'#EAA;margin: 8px 0 0 0;padding:10px;">Required entries were not provided!' .
-			' Please re-submit the form after answering all required questions.</div>';
-	exit;
+	'#EAA;margin: 8px 0 0 0;padding:10px;">Required entries were not provided!' .
+		' Please re-submit the form after answering all required questions.</div>';
+	;
+}
+
+// Fix PHP not parsing multiple checkboxes
+
+$d_text = array();
+foreach (explode('&',$rawData) as $string) {
+        list($key,$val)=explode('=',$string);
+        if ($key != 'd_text') {
+                continue;
+        }
+        $d_text[] = $val;
+}
+
+if ($d_text) {
+  $_POST['d_text'] = implode(' ',$d_text);
 }
 
 // only process form once
-if (!isset($TEMPLATE)) {
-	include_once('inc/response.inc.php');
+if ($ini) {
+	$client_id= $ini['ARCGIS_CLIENT_ID'];
+	$client_secret = $ini['ARCGIS_CLIENT_SECRET'];
 
-	// Process the ini filefile for directory locations and 
-	// credentials to the ArcGISOnline server.
+	$server = $ini['SERVER_SHORTNAME'];
 
-	$ini = parse_ini_file('../conf/response.ini');
-
-	$client_id= $ini['arcgis_client_id'];
-	$client_secret = $ini['arcgis_client_secret'];
-
-	$server = $ini['server'];
-	$incoming_dir = $ini['incoming_dir'];
-	$log_dir = $ini['log_dir'];
-
-	$home_dir = dirname(__FILE__);
+        $incoming_dir = $data_dir . "/incoming";
 
 	$eventid = eventid();
 	$windowtype = param('windowtype');
@@ -147,13 +174,7 @@ if (!isset($TEMPLATE)) {
 		}
 	';
 
-	include_once $_SERVER['DOCUMENT_ROOT'] . '/template/template.inc.php';
-
 } // if (!isset($TEMPLATE))
-
-
-
-
 
 $data = $_POST;
 $data['server'] = $server;
@@ -230,12 +251,12 @@ if ($form_version < 1.2) {
 	if ($windowtype == 'enabled') {
 		echo '<p><a href="javascript:window.close()">' . $T['CLOSE_LABEL'] . '</a></p>';
 	} else {
-		if ($eventid <> 'unknown') {
-			echo '<p><a href="https://earthquake.usgs.gov/earthquakes/eventpage/' . $eventid . '#dyfi">' 
+		if (isset($eventid) and $eventid != '' and $eventid <> 'unknown') {
+            echo '<p><a href="https://earthquake.usgs.gov/earthquakes/eventpage/' . $eventid . '#dyfi">' 
 					. $T['BACK_EVENT_LABEL'] 
 					. '</a></p>';
 		} else {
-			echo '<p><a href="https://earthquake.usgs.gov/earthquakes/map/">' . $T['BACK_HOMEPAGE_LABEL'] . '</a></p>';
+			echo '<p><a href="https://earthquake.usgs.gov/data/dyfi/">' . $T['BACK_HOMEPAGE_LABEL'] . '</a></p>';
 		}
 	}
 
