@@ -14,10 +14,10 @@ if (!isset($ini)) {
 	$ini = parse_ini_file('../conf/config.ini');
 	$data_dir = $ini['WRITE_DIR'];
 	$log_dir = "$data_dir/log";
-}
         
-$rawData = file_get_contents("php://input");
-file_put_contents("$log_dir/raw.input",$rawData);
+	$rawData = file_get_contents("php://input");
+	file_put_contents("$log_dir/raw.input",$rawData);
+}
 
 if (!isset($TEMPLATE)) {
   $TITLE = 'DYFI Questionnaire Result v{{VERSION}}';
@@ -57,141 +57,117 @@ if ($d_text) {
   $_POST['d_text'] = implode(' ',$d_text);
 }
 
-// only process form once
-if ($ini) {
-	$client_id= $ini['ARCGIS_CLIENT_ID'];
-	$client_secret = $ini['ARCGIS_CLIENT_SECRET'];
+// Main loop
 
-	$server = $ini['SERVER_SHORTNAME'];
+$client_id= $ini['ARCGIS_CLIENT_ID'];
+$client_secret = $ini['ARCGIS_CLIENT_SECRET'];
+$server = $ini['SERVER_SHORTNAME'];
+$incoming_dir = $data_dir . "/incoming";
 
-        $incoming_dir = $data_dir . "/incoming";
+$eventid = eventid();
+$windowtype = param('windowtype');
+$form_version = param('form_version', '1.1');
+$language = param('language', 'en');
 
-	$eventid = eventid();
-	$windowtype = param('windowtype');
-	$form_version = param('form_version', '1.1');
-	$language = param('language', 'en');
+// Do we need to do a geocode?
+$mapAddress = param('ciim_mapAddress', 'null');
+if ($mapAddress != 'null') {
+	try {
+		// Client ID/Secret from response.ini
+		$tokenResult = json_decode(file_get_contents(
+			'https://www.arcgis.com/sharing/rest/oauth2/token/' .
+				'?grant_type=client_credentials&expiration=15' .
+				'&client_id=' . $client_id .
+				'&client_secret=' . $client_secret
+		), true);
 
-	// Do we need to do a geocode?
-	$mapAddress = param('ciim_mapAddress', 'null');
-	if ($mapAddress != 'null') {
-		try {
-			// Client ID/Secret from response.ini
-			$tokenResult = json_decode(file_get_contents(
-					'https://www.arcgis.com/sharing/rest/oauth2/token/' .
-					'?grant_type=client_credentials&expiration=15' .
-					'&client_id=' . $client_id .
-					'&client_secret=' . $client_secret
-				), true);
+		$token = $tokenResult['access_token'];
+		$geocodeResult = json_decode(file_get_contents(
+			'https://geocode.arcgis.com/arcgis/rest/services/World/' .
+				'GeocodeServer/find?f=json&forStorage=true' .
+				'&token=' . $token .
+				'&text=' . urlencode($mapAddress)
+		), true);
 
-			$token = $tokenResult['access_token'];
+		$geocodeLocation = $geocodeResult['locations'][0];
 
-			$geocodeResult = json_decode(file_get_contents(
-					'https://geocode.arcgis.com/arcgis/rest/services/World/' .
-					'GeocodeServer/find?f=json&forStorage=true' .
-					'&token=' . $token .
-					'&text=' . urlencode($mapAddress)
-				), true);
+		if ($geocodeLocation) {
+			$geocodeLat = $geocodeLocation['feature']['geometry']['y'];
+			$geocodeLon = $geocodeLocation['feature']['geometry']['x'];
 
-			$geocodeLocation = $geocodeResult['locations'][0];
+			$_POST['ciim_mapLat'] = $geocodeLat;
+			$_POST['ciim_mapLon'] = $geocodeLon;
+		}
+	} catch (Exception $ex) {
+		// Oh well, we tried...
+	}
+} // End geolocation attempt
 
-			if ($geocodeLocation) {
-				$geocodeLat = $geocodeLocation['feature']['geometry']['y'];
-				$geocodeLon = $geocodeLocation['feature']['geometry']['x'];
+// Write to file
 
-				//$_POST['ciim_clientMapLat'] = $_POST['ciim_mapLat'];
-				//$_POST['ciim_clientMapLon'] = $_POST['ciim_mapLon'];
-				$_POST['ciim_mapLat'] = $geocodeLat;
-				$_POST['ciim_mapLon'] = $geocodeLon;
-			}
-		} catch (Exception $ex) {
-			// Oh well, we tried...
+$time = time();
+$count = getmypid();
+
+// Build $post from $_POST rather than php://input because we may have
+// modified $_POST geocode or d_text
+$post = array();
+
+if ($_POST) {
+	foreach ($_POST as $k=>$v) {
+		if (is_array($v)) {
+			$post[] = "$k=" . implode(' ',$v);
+		} else {
+			$post[] = "$k=$v";
 		}
 	}
+	$post = str_replace(' ', '+', implode('&', $post));
+	$raw = 'timestamp=' . $time . '&' . $post;
+	$filename = implode('.',array('entry','server',$eventid,$time,$count));
+	$tmp = $incoming_dir . '/tmp.' . $filename;
+	$filename = $incoming_dir . '/' . $filename;
 
-	// Write to file
-	$time = time();
-	$count = getmypid();
+	if ($savefile) {
+		file_put_contents($tmp, $raw);
+		copy($tmp, $log_dir . '/latest_entry.post');
 
-	// Build $post from $_POST rather than php://input because we may have
-	// modified $_POST with a saveable geocode result
-	$post = array();
-
-	if ($_POST) {
-        	foreach ($_POST as $k=>$v) {
-			if (is_array($v)) {
-				$post[] = "$k=" . implode(' ',$v);
-			} else {
-				$post[] = "$k=$v";
-			}
-		}
-		$post = str_replace(' ', '+', implode('&', $post));
-		$raw = 'timestamp=' . $time . '&' . $post;
-		$filename = 'entry.' . $server . '.' . $eventid . '.' . $time . '.' . $count;
-		$tmp = $incoming_dir . '/tmp.' . $filename;
-		$filename = $incoming_dir . '/' . $filename;
-
-		if ($savefile) {
-			file_put_contents($tmp, $raw);
-			copy($tmp, $log_dir . '/latest_entry.post');
-
-			rename($tmp, $filename);
-			replicate($ini,$filename);
-		}
+		rename($tmp, $filename);
+		replicate($ini,$filename);
 	}
-    
-// Compute intensity using this response
-	if (1) {
-		$cdi = _rom(compute_intensity());
-	}
+	$cdi = _rom(compute_intensity());
+} 
 
+// Get language translation
 
-// Get language translations
-	$translate_file = 'inc/labels.' . $language . '.inc.php';
-	if (!file_exists($translate_file)) {
-		$translate_file = 'inc/labels.en.inc.php';
-	}
-	include_once($translate_file);
+$translate_file = 'inc/labels.' . $language . '.inc.php';
+if (!file_exists($translate_file)) {
+	$translate_file = 'inc/labels.en.inc.php';
+}
+include_once($translate_file);
 
-
-// include template
-
-	$TITLE = $T['TITLE'];
-	$ENCODING = 'utf-8';
-	if ($form_version >= 1.2 || $windowtype == 'enabled') {
-		$TEMPLATE = "minimal";
-	} else {
-		$TEMPLATE = "default";
-	}
-
-	// using inline styles to eliminate a separate request
-	$STYLES = '
-		dt {
-			font-weight:bold;
-		}
-		dd {
-			margin-bottom:8px;
-		}
-	';
-
-} // if (!isset($TEMPLATE))
+$TITLE = $T['TITLE'];
+$ENCODING = 'utf-8';
+if ($form_version >= 1.2 || $windowtype == 'enabled') {
+	$TEMPLATE = "minimal";
+} else {
+	$TEMPLATE = "default";
+}
 
 $data = $_POST;
 $data['server'] = $server;
 $data['eventid'] = $eventid;
-
-// Lookup of other entries is disabled for now
-// if (isset($lookup['rom_cdi'])) { 
-//	$data['all_cdi'] = $lookup['rom_cdi'];
-//}
-//if (isset($lookup['nresp'])) {
-//	$data['nresp'] = $lookup['nresp'];
-//}
-
 if (isset($cdi)) {
 	$data['your_cdi'] = $cdi;
 }
 
-echo '<p>' . $T['THANKS_LABEL'] . '</p>';
+// Lookup of other entries is disabled for now
+// if (isset($lookup)) {
+//	$data['all_cdi'] = $lookup['rom_cdi'];
+//	$data['nresp'] = $lookup['nresp'];
+//}
+
+if ($savefile) {
+	echo '<p class="alert success">' . $T['THANKS_LABEL'] . '</p>';
+}
 echo '<dl>';
 
 $OUTPUT = array (
