@@ -4,6 +4,7 @@ include_once 'inc/response.inc.php';
 
 // defines the $CONFIG hash of configuration variables
 include_once '../conf/config.inc.php';
+include_once './replicate.php';
 
 if (!isset($ini)) {
 
@@ -19,12 +20,10 @@ $rawData = file_get_contents("php://input");
 file_put_contents("$log_dir/raw.input",$rawData);
 
 if (!isset($TEMPLATE)) {
-
   $TITLE = 'DYFI Questionnaire Result v{{VERSION}}';
   $NAVIGATION = true;
 
   include 'template.inc.php';
-        
 }
 
 // This script must do 4 things:
@@ -33,15 +32,15 @@ if (!isset($TEMPLATE)) {
 // 3. Compute intensity for this response
 // 4. Output summary HTML 
 
-//       error_reporting( E_ERROR | E_CORE_ERROR );
-
 // Firstly validate the form
 
+$savefile = 1;
 if (!isset($_POST['fldSituation_felt'])) {
-	print '<div style="border: 3px dashed #E88;width: 762px;background: '.
-	'#EAA;margin: 8px 0 0 0;padding:10px;">Required entries were not provided!' .
-		' Please re-submit the form after answering all required questions.</div>';
-	;
+	$savefile = 0;
+	print '<div style="border: 3px dashed #E88;width: 762px;background: ' .
+	'#EAA;margin: 8px 0 0 0;padding:10px;">' . 
+	'Required entries were not provided!' .
+	' Please re-submit the form after answering all required questions.</div>';
 }
 
 // Fix PHP not parsing multiple checkboxes
@@ -54,7 +53,6 @@ foreach (explode('&',$rawData) as $string) {
         }
         $d_text[] = $val;
 }
-
 if ($d_text) {
   $_POST['d_text'] = implode(' ',$d_text);
 }
@@ -110,8 +108,7 @@ if ($ini) {
 		}
 	}
 
-
-// Write to file
+	// Write to file
 	$time = time();
 	$count = getmypid();
 
@@ -119,8 +116,8 @@ if ($ini) {
 	// modified $_POST with a saveable geocode result
 	$post = array();
 
-    if ($_POST) {
-        foreach ($_POST as $k=>$v) {
+	if ($_POST) {
+        	foreach ($_POST as $k=>$v) {
 			if (is_array($v)) {
 				$post[] = "$k=" . implode(' ',$v);
 			} else {
@@ -128,17 +125,19 @@ if ($ini) {
 			}
 		}
 		$post = str_replace(' ', '+', implode('&', $post));
-
 		$raw = 'timestamp=' . $time . '&' . $post;
 		$filename = 'entry.' . $server . '.' . $eventid . '.' . $time . '.' . $count;
 		$tmp = $incoming_dir . '/tmp.' . $filename;
 		$filename = $incoming_dir . '/' . $filename;
 
-		file_put_contents($tmp, $raw);
-		copy($tmp, $log_dir . '/latest_entry.post');
-		rename($tmp, $filename);
-	}
+		if ($savefile) {
+			file_put_contents($tmp, $raw);
+			copy($tmp, $log_dir . '/latest_entry.post');
 
+			rename($tmp, $filename);
+			replicate($ini,$filename);
+		}
+	}
     
 // Compute intensity using this response
 	if (1) {
@@ -192,9 +191,6 @@ if (isset($cdi)) {
 	$data['your_cdi'] = $cdi;
 }
 
-
-
-
 echo '<p>' . $T['THANKS_LABEL'] . '</p>';
 echo '<dl>';
 
@@ -244,8 +240,6 @@ foreach($OUTPUT as $key => $desc) {
 
 echo '</dl>';
 
-
-
 if ($form_version < 1.2) {
 
 	if ($windowtype == 'enabled') {
@@ -261,6 +255,5 @@ if ($form_version < 1.2) {
 	}
 
 }
-
 
 ?>
