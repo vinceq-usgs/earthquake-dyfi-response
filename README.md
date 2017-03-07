@@ -24,12 +24,12 @@ entry file (raw text format). It also displays the closing
 message for the user.
 
 
-2. replicate_incoming.php
+2. replicate.php
 
 This program takes each entry file and replicates it to one directory
 for each of the backend servers. The entry files will be stored there
 until the backend server periodically transfers the files to the backend
-system. This program should be run in the background from crontab.
+system. This program is now run directly by response.php.
 
 
 INSTALLATION AND CONFIGURATION
@@ -51,9 +51,9 @@ This subsytem should be installed in each "target" or response server for the DY
 
 4. cd to the repository root and run src/lib/pre-install to configure (this will create the target directories).
 
-5. Add the replicate.sh script in the crontab (preferably running once per minute).
+5. Make sure that the created directories are web-writeable.
 
-6. Make sure that the created directories are web-writeable.
+6. Edit the DYFI backend servers to start rsyncing data from [data]/earthquake-dyfi-response/incoming.[server]/
 
 TODO
 ----
