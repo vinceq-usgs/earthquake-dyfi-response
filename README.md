@@ -13,29 +13,21 @@ To be run on the HazDev acquisitions servers.
 Components
 ----------
 
-This subsytem has two components:
-
-1. response.php 
-
 This program (found in the htdocs directory of this repo)
 is run by the DYFI Questionnaire once the
 user submits the form. It takes the form data and saves it as a unique
 entry file (raw text format). It also displays the closing
 message for the user.
 
-2. replicate.php
-
-This program takes each entry file and replicates it to one directory
-for each of the backend servers. The entry files will be stored there
+It then makes a copy of the entry file for each of the backend servers. The entry files will be stored in a separate directory (one for each backend server) 
 until the backend server periodically transfers the files to the backend
-system. This program is now run directly by response.php.
+system. 
 
 
 INSTALLATION AND CONFIGURATION
 ------------------------------
 
 This subsytem should be installed in each "target" or response server for the DYFI Questionnaire. Setup requires the following locations:
-
 
 - An 'apps' directory, [apps]/earthquake-dyfi-response. Executables go here. 
 - A 'data' directory, [data]/earthquake-dyfi-response. Incoming entry files, replication directories, and logs go here. Ensure that it has sufficient file space.
