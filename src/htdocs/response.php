@@ -4,7 +4,6 @@ include_once 'inc/response.inc.php';
 
 // defines the $CONFIG hash of configuration variables
 include_once '../conf/config.inc.php';
-include_once './replicate.php';
 
 if (!isset($ini)) {
 
@@ -37,10 +36,10 @@ if (!isset($TEMPLATE)) {
 $savefile = 1;
 if (!isset($_POST['fldSituation_felt'])) {
 	$savefile = 0;
-	print '<div style="border: 3px dashed #E88;width: 762px;background: ' .
-	'#EAA;margin: 8px 0 0 0;padding:10px;">' . 
+	print '<p class="alert warning">' .
 	'Required entries were not provided!' .
-	' Please re-submit the form after answering all required questions.</div>';
+	' Please re-submit the form after answering all required questions.' .
+	'</p>';
 }
 
 // Fix PHP not parsing multiple checkboxes
@@ -62,46 +61,14 @@ if ($d_text) {
 $client_id= $ini['ARCGIS_CLIENT_ID'];
 $client_secret = $ini['ARCGIS_CLIENT_SECRET'];
 $server = $ini['SERVER_SHORTNAME'];
-$incoming_dir = $data_dir . "/incoming";
+$backends = explode(',',$ini['BACKEND_SERVERS']);
 
 $eventid = eventid();
 $windowtype = param('windowtype');
 $form_version = param('form_version', '1.1');
 $language = param('language', 'en');
 
-// Do we need to do a geocode?
-$mapAddress = param('ciim_mapAddress', 'null');
-if ($mapAddress != 'null') {
-	try {
-		// Client ID/Secret from response.ini
-		$tokenResult = json_decode(file_get_contents(
-			'https://www.arcgis.com/sharing/rest/oauth2/token/' .
-				'?grant_type=client_credentials&expiration=15' .
-				'&client_id=' . $client_id .
-				'&client_secret=' . $client_secret
-		), true);
-
-		$token = $tokenResult['access_token'];
-		$geocodeResult = json_decode(file_get_contents(
-			'https://geocode.arcgis.com/arcgis/rest/services/World/' .
-				'GeocodeServer/find?f=json&forStorage=true' .
-				'&token=' . $token .
-				'&text=' . urlencode($mapAddress)
-		), true);
-
-		$geocodeLocation = $geocodeResult['locations'][0];
-
-		if ($geocodeLocation) {
-			$geocodeLat = $geocodeLocation['feature']['geometry']['y'];
-			$geocodeLon = $geocodeLocation['feature']['geometry']['x'];
-
-			$_POST['ciim_mapLat'] = $geocodeLat;
-			$_POST['ciim_mapLon'] = $geocodeLon;
-		}
-	} catch (Exception $ex) {
-		// Oh well, we tried...
-	}
-} // End geolocation attempt
+// Geocoding no longer supported here
 
 // Write to file
 
@@ -109,10 +76,10 @@ $time = time();
 $count = getmypid();
 
 // Build $post from $_POST rather than php://input because we may have
-// modified $_POST geocode or d_text
+// modified $_POST d_text
 $post = array();
 
-if ($_POST) {
+if (is_array($_POST)) {
 	foreach ($_POST as $k=>$v) {
 		if (is_array($v)) {
 			$post[] = "$k=" . implode(' ',$v);
@@ -120,20 +87,21 @@ if ($_POST) {
 			$post[] = "$k=$v";
 		}
 	}
-	$post = str_replace(' ', '+', implode('&', $post));
-	$raw = 'timestamp=' . $time . '&' . $post;
-	$filename = implode('.',array('entry','server',$eventid,$time,$count));
-	$tmp = $incoming_dir . '/tmp.' . $filename;
-	$filename = $incoming_dir . '/' . $filename;
+}
 
-	if ($savefile) {
-		file_put_contents($tmp, $raw);
-		copy($tmp, $log_dir . '/latest_entry.post');
+$post = str_replace(' ', '+', implode('&', $post));
+$raw = 'timestamp=' . $time . '&' . $post;
+file_put_contents($log_dir . '/latest_entry.post',$raw);
 
-		rename($tmp, $filename);
-		replicate($ini,$filename);
+if ($savefile) {
+	$basename = implode('.',array('entry','server',$eventid,$time,$count));
+	$out_template = $data_dir . "/incoming.SERVER";
+	foreach ($backends as $backend) {
+		$dest = str_replace('SERVER',$backend,$out_template);
+                $dest .= "/" . $basename;
+		file_put_contents($dest, $raw);
 	}
-	$cdi = _rom(compute_intensity());
+	file_put_contents($data_dir . "/backup/" . $basename,$raw);
 } 
 
 // Get language translation
@@ -155,6 +123,7 @@ if ($form_version >= 1.2 || $windowtype == 'enabled') {
 $data = $_POST;
 $data['server'] = $server;
 $data['eventid'] = $eventid;
+$cdi = _rom(compute_intensity());
 if (isset($cdi)) {
 	$data['your_cdi'] = $cdi;
 }

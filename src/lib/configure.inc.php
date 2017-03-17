@@ -26,16 +26,6 @@ $PROMPTS = array(
     'default' => $REPO_DIR . '/test/data',
     'secure' => false
   ),
-  'ARCGIS_CLIENT_ID' => array(
-    'prompt' => 'ArcGIS Client ID for on-the-fly geocoding of responses',
-    'default' => 'my_id',
-    'secure' => false
-  ),
-  'ARCGIS_CLIENT_SECRET' => array(
-    'prompt' => 'ArcGIS Secret Password',
-    'default' => 'password',
-    'secure' => true
-  ),
   'BACKEND_SERVERS' => array(
     'prompt' => 'Comma-delimited list of backend servers',
     'default' => 'backendserver1.gov,backendserver2.gov',
@@ -137,7 +127,6 @@ function createdir ($dir) {
 
 $datadir = $CONFIG['WRITE_DIR'];
 createdir($datadir);
-createdir("$datadir/incoming");
 createdir("$datadir/log");
 
 $servers = explode(',',$CONFIG['BACKEND_SERVERS']);
@@ -147,7 +136,7 @@ foreach ($servers as $server) {
   createdir($dir);
 }
 
-createdir("$datadir/incoming.backup");
+createdir("$datadir/backup");
 
 // Close the file
 fclose($FP_CONFIG);
