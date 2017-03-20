@@ -31,6 +31,16 @@ $PROMPTS = array(
     'default' => 'backendserver1.gov,backendserver2.gov',
     'secure' => false
   ),
+ 'ARCGIS_CLIENT_ID' => array(
+    'prompt' => 'ArcGIS Client ID for on-the-fly geocoding of responses',
+    'default' => 'my_id',
+    'secure' => false
+  ),
+  'ARCGIS_CLIENT_SECRET' => array(
+    'prompt' => 'ArcGIS Secret Password',
+    'default' => 'password',
+    'secure' => true
+  ),
   'TEST_RESPONSE_URL' => array(
     'prompt' => 'Destination for testing response.php',
     'default' => 'http://localhost:8880/response.php',

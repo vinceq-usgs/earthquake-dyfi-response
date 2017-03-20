@@ -58,8 +58,6 @@ if ($d_text) {
 
 // Main loop
 
-$client_id= $ini['ARCGIS_CLIENT_ID'];
-$client_secret = $ini['ARCGIS_CLIENT_SECRET'];
 $server = $ini['SERVER_SHORTNAME'];
 $backends = explode(',',$ini['BACKEND_SERVERS']);
 
@@ -68,7 +66,16 @@ $windowtype = param('windowtype');
 $form_version = param('form_version', '1.1');
 $language = param('language', 'en');
 
-// Geocoding no longer supported here
+// Do we need to do a geocode?
+$mapAddress = param('ciim_mapAddress', 'null');
+if ($mapAddress != 'null') {
+	include_once('inc/geocode.php');
+	try {
+		geocode($ini);
+	} catch (Exception $ex) {
+		// Oh well, we tried...
+	}
+}
 
 // Write to file
 
@@ -153,6 +160,8 @@ $OUTPUT = array (
 	'fldContact_phone' => $T['PHONE_LABEL'],
 	'ciim_address' => $T['ADDRESS_LABEL'],
 	'ciim_time' => $T['EVENTTIME_LABEL'],
+	'ciim_mapLat' => 'Latitude',
+	'ciim_mapLon' => 'Longitude',
 
 	'filename' => "Output",
 	'form_version' => "Form version",
