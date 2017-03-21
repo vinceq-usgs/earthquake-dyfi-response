@@ -26,7 +26,12 @@ $PROMPTS = array(
     'default' => $REPO_DIR . '/test/data',
     'secure' => false
   ),
-  'ARCGIS_CLIENT_ID' => array(
+  'BACKEND_SERVERS' => array(
+    'prompt' => 'Comma-delimited list of backend servers',
+    'default' => 'backendserver1.gov,backendserver2.gov',
+    'secure' => false
+  ),
+ 'ARCGIS_CLIENT_ID' => array(
     'prompt' => 'ArcGIS Client ID for on-the-fly geocoding of responses',
     'default' => 'my_id',
     'secure' => false
@@ -35,11 +40,6 @@ $PROMPTS = array(
     'prompt' => 'ArcGIS Secret Password',
     'default' => 'password',
     'secure' => true
-  ),
-  'BACKEND_SERVERS' => array(
-    'prompt' => 'Comma-delimited list of backend servers',
-    'default' => 'backendserver1.gov,backendserver2.gov',
-    'secure' => false
   ),
   'TEST_RESPONSE_URL' => array(
     'prompt' => 'Destination for testing response.php',
@@ -120,9 +120,9 @@ foreach ($PROMPTS as $key => $item) {
 
   $CONFIG[$key] = $default;
 
-  fwrite($FP_CONFIG, $key . ' = "' .
-      configure($item['prompt'], $default, isset($item['secure']) ? $item['secure'] : false) .
-      "\"\n");
+  $answer = configure($item['prompt'], $default, isset($item['secure']) ? $item['secure'] : false);
+  fwrite($FP_CONFIG, $key . ' = "' . $answer .  "\"\n");
+  $CONFIG[$key] = $answer;
 }
 
 // Do any custom prompting here
@@ -137,7 +137,6 @@ function createdir ($dir) {
 
 $datadir = $CONFIG['WRITE_DIR'];
 createdir($datadir);
-createdir("$datadir/incoming");
 createdir("$datadir/log");
 
 $servers = explode(',',$CONFIG['BACKEND_SERVERS']);
@@ -147,7 +146,7 @@ foreach ($servers as $server) {
   createdir($dir);
 }
 
-createdir("$datadir/incoming.backup");
+createdir("$datadir/backup");
 
 // Close the file
 fclose($FP_CONFIG);
