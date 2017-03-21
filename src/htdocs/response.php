@@ -69,9 +69,11 @@ $language = param('language', 'en');
 // Do we need to do a geocode?
 $mapAddress = param('ciim_mapAddress', 'null');
 if ($mapAddress != 'null') {
-	include_once('inc/geocode.php');
+	include_once('../lib/geocode.php');
 	try {
-		geocode($ini);
+		$client_id = $ini['ARCGIS_CLIENT_ID'];
+	        $client_secret = $ini['ARCGIS_CLIENT_SECRET'];
+		geocode($client_id,$client_secret);
 	} catch (Exception $ex) {
 		// Oh well, we tried...
 	}
@@ -97,15 +99,16 @@ if (is_array($_POST)) {
 }
 
 $post = str_replace(' ', '+', implode('&', $post));
-$raw = 'timestamp=' . $time . '&' . $post;
+$raw = 'timestamp=' . $time . '&server=' . $server . '&' . $post;
 file_put_contents($log_dir . '/latest_entry.post',$raw);
 
 if ($savefile) {
-	$basename = implode('.',array('entry','server',$eventid,$time,$count));
-	$out_template = $data_dir . "/incoming.SERVER";
+	$basename = sprintf("entry.%s.%s.%s.%s",
+		$server,$eventid,$time,$count);
+
+	$out_template = $data_dir . "/incoming.%s/" . $basename;
 	foreach ($backends as $backend) {
-		$dest = str_replace('SERVER',$backend,$out_template);
-                $dest .= "/" . $basename;
+		$dest = sprintf($out_template,$backend);
 		file_put_contents($dest, $raw);
 	}
 	file_put_contents($data_dir . "/backup/" . $basename,$raw);
@@ -119,16 +122,11 @@ if (!file_exists($translate_file)) {
 }
 include_once($translate_file);
 
-$TITLE = $T['TITLE'];
-$ENCODING = 'utf-8';
-if ($form_version >= 1.2 || $windowtype == 'enabled') {
-	$TEMPLATE = "minimal";
-} else {
-	$TEMPLATE = "default";
-}
+if (!isset($TEMPLATE)) {
+    include 'minimal.inc.php';
+  }
 
 $data = $_POST;
-$data['server'] = $server;
 $data['eventid'] = $eventid;
 $cdi = _rom(compute_intensity());
 if (isset($cdi)) {
@@ -165,10 +163,8 @@ $OUTPUT = array (
 
 	'filename' => "Output",
 	'form_version' => "Form version",
-	'server' => "Server",
 ); 
 
-$counter = 0;
 foreach($OUTPUT as $key => $desc) {
 	if (!array_key_exists($key, $data)) {
 		continue;
@@ -187,9 +183,8 @@ foreach($OUTPUT as $key => $desc) {
 	}
 
 	// Loop over results and append the rows
-	$class = ($counter++%2==0)?'alt':'';
-	echo '<dt class="' . $class . '">' . $desc . '</dt>';
-	echo '<dd class="' . $class . '">' . htmlspecialchars($val) . '</dd>';
+	echo '<dt>' . $desc . '</dt>';
+	echo '<dd>' . htmlspecialchars($val) . '</dd>';
 }
 
 echo '</dl>';
