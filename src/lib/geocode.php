@@ -3,10 +3,7 @@
   // Geocode using ESRI ArcGIS
   // Use authentication keys from $ini
  
-  function geocode($ini) {
-	$client_id= $ini['ARCGIS_CLIENT_ID'];
-	$client_secret = $ini['ARCGIS_CLIENT_SECRET'];
-	
+  function geocode($client_id,$client_secret) {
 	$tokenResult = json_decode(file_get_contents(
 		'https://www.arcgis.com/sharing/rest/oauth2/token/' .
 		'?grant_type=client_credentials&expiration=15' .
