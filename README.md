@@ -41,8 +41,8 @@ This subsytem should be installed in each "target" or response server for the DY
 3. cd to the repository root and run src/lib/pre-install to configure (this will create the target directories). It will ask for the following settings:
     - MOUNT PATH: URL for the response.php
     - SERVER SHORTNAME: Name of the server this is installed in
-    - WRITE DIR: Data directory. For testing, you can use [THIS_REPOSITORY]/test/ata/. For installation, you probably want [data]/earthquake-dyfi-response
-    - BACKEND SERVERS: Comma-delimited list of DYFI servers that will be accessing this data. The incoming entries will be copied to a separate directories each named 'incoming.[SERVER]'.
+    - WRITE DIR: Data directory. For testing, you can use [THIS_REPOSITORY]/test/data/. For installation, you probably want [data]/earthquake-dyfi-response
+    - BACKEND SERVERS: Comma-delimited list of DYFI servers that will be accessing this data. The incoming entries will be copied to separate directories each named 'incoming.[SERVER]'.
     - TEST RESPONSE URL: Used for local testing only.
 
 5. On the DYFI backend servers, point the retrieval script to start receiving data from here: 
