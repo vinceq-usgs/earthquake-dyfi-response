@@ -9,6 +9,7 @@
 
   function eventid() {
 
+    if (isset($_POST['eventid'])) return $_POST['eventid'];
     if (!isset($_POST['code'])) return 'unknown';
 
     $evid = $_POST['code'];
