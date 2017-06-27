@@ -1,8 +1,9 @@
 For testing:
 
 1. cd to the root of this repository
-2. Run src/lib/pre-install
-3. Run grunt
+2. Run 'src/lib/pre-install'
+2.1. If this is the first time, you may have to run 'npm install' first
+3. Run 'grunt'
 
 This will open three windows in your browser.
 Files in the htdocs directory (e.g. index.php) will show up here:
@@ -18,7 +19,7 @@ Note for actual production, this repo should be installed in the application dir
 
 To test with a live version of the DYFI questionnaire,
 1. download the earthquake-eventpages repository, then 'npm install'
-2. run src/lib/pre-install. For 'DYFI_RESPONSE_URL' enter the response port (i.e. http://localhost:8880/dyfi/index.php)
+2. run src/lib/pre-install. For 'DYFI_RESPONSE_URL' enter the response port (i.e. http://localhost:8880/response.php)
 3. For Safari, make sure Develop->Disable ... Restrictions is on
 4. Run grunt
 5. Navigate to the DYFI form, and test from there.
