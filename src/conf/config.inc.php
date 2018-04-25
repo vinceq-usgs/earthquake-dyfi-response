@@ -2,10 +2,12 @@
 
 date_default_timezone_set('UTC');
 
-$CONFIG_INI_FILE = dirname(__FILE__) . '/config.ini';
-if (!file_exists($CONFIG_INI_FILE)) {
-  trigger_error('Application not configured. Run pre-install script.');
-  exit(-1);
-}
+$CONFIG_DEFAULTS = array(
+  'ARCGIS_CLIENT_ID'     => null,
+  'ARCGIS_CLIENT_SECRET' => null,
+  'BACKEND_SERVERS' => 'backend',
+  'SERVER_SHORTNAME' => $_ENV['HOSTNAME'],
+  'WRITE_DIR' => '/data',
+);
 
-$CONFIG = parse_ini_file($CONFIG_INI_FILE);
+$CONFIG = array_merge($CONFIG_DEFAULTS, $_ENV);

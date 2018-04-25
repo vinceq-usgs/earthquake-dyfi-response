@@ -9,6 +9,7 @@
 
   function eventid() {
 
+    if (isset($_POST['eventid'])) return $_POST['eventid'];
     if (!isset($_POST['code'])) return 'unknown';
 
     $evid = $_POST['code'];
@@ -23,7 +24,7 @@
   function _rom($ii) {
     if ($ii <= 1) return 'I';
     if ($ii < 2.5) return 'II';
-  
+
     $ii = (int)($ii+0.5);
     if ($ii>12) $ii = 12;
 
@@ -44,13 +45,13 @@
       'fldEffects_shelved'     => 5,
       'fldEffects_pictures'   => 2,
       'fldEffects_furniture' => 3,
-      'damage' => 5,   
+      'damage' => 5,
     );
 
     // compute special values from felt/otherfelt and d_text
 
     // bug in felt value on form
-    if ($_POST['fldSituation_felt'] == '2 no') 
+    if ($_POST['fldSituation_felt'] == '2 no')
       $_POST['fldSituation_felt'] = '0 no';
     $_POST['felt'] = other2felt();
     $_POST['damage'] = dtext2damage();
@@ -65,16 +66,16 @@
 
       $cws += $val * $weight;
     }
-   
+
     if ($cws <= 0) return 1;
     $cdi = sprintf("%1.1f",(3.3996 * log($cws) - 4.3781));
     if ($cdi < 1) return 1;
     if ($cdi < 2) return 2;
-    return $cdi; 
+    return $cdi;
   }
 
   function other2felt() {
-    $other = $_POST['fldSituation_others'];
+    $other = isset($_POST['fldSituation_others']) ? $_POST['fldSituation_others'] : null;
     $felt = $_POST['fldSituation_felt'];
 
     if ($other == 3) { return 0.72; }
@@ -116,7 +117,7 @@
         if (in_array($val,$text)) return $dam;
       }
     }
-    
+
     return 0;
   }
 
@@ -127,7 +128,7 @@
   //
 
 
-  function lookup_cdi_file() { 
+  function lookup_cdi_file() {
     $evid = $_POST['code'];
     $net = $_POST['network'];
     if (is_null($evid) or $evid == 'unknown') return;
@@ -152,7 +153,7 @@
     // Advance to correct location
 
     while ($xml->read()) {
-      if ($xml->name != 'location' or 
+      if ($xml->name != 'location' or
           $xml->nodeType != 1) continue;
 
       $name = $xml->getAttribute('name');
@@ -164,7 +165,7 @@
     $cdi = null;
     $nresp = null;
     $result = null;
- 
+
     while($xml->read()) {
 
       $name = $xml->name;
@@ -183,13 +184,13 @@
       if ($name == 'location' and $type == 15) break;
     }
 
-    $xml->close();  
+    $xml->close();
 
     if ($cdi and $nresp) $result = array(
       'cdi'     => $cdi,
       'rom_cdi' => _rom($cdi),
       'nresp'   => $nresp);
-    return($result); 
+    return($result);
   }
 
 
@@ -197,13 +198,13 @@
     $city = _strip_code($_POST['ciim_city']);
     $region = _strip_code($_POST['ciim_region']);
     $country = _strip_code($_POST['ciim_country']);
- 
+
     if ($city and $region and $country)
     return "$city::$region::$country";
   }
 
 
-  function _strip_code($string) { 
+  function _strip_code($string) {
     $c = stripos($string,' ');
     if (!$c) return;
 
