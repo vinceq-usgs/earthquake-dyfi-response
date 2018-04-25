@@ -1,26 +1,27 @@
 earthquake-dyfi-response
 ==============
 
-The DYFI responses subsytem. This manages the transfer of
-DYFI user entries from the web interface to the DYFI backend
-servers through the hazdev acquisition servers.
+Subsystem of DYFI that handles collection of user entries from the
+web interface.
+
+See https://github.com/usgs/earthquake-eventpages/ for the web interface.
+
 
 Location
 --------
 
-To be run on the HazDev acquisitions servers.
+To be run on USGS EHP servers.
 
 Components
 ----------
 
-responses.php is the program that runs from from the DYFI
-Questionnaire whenever a user submits data.
+The `response.php` file handles the DYFI Questionnaire
+whenever a user submits data.
 It takes the form data and saves it as a unique
 entry file (in raw text format). It also displays the closing
 message for the user.
 
-responses.php makes one copy of this entry file for each of the 
-backend servers. Each file is stored in a separate 
+The `response.php` file makes one copy of this entry file for each of the backend servers. Each file is stored in a separate 
 directory (one for each backend server). It is each backend server's
 responsibility to periodically copy those files to its own server
 and remove them from this directory.
