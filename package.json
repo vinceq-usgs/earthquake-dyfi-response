@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "build": "docker build -t usgs/earthquake-dyfi-response:latest .",
-    "start": "echo 'Starting container on http://localhost:8123/' && echo && docker run --rm -p 8123:80 -v $(pwd)/responses:/data usgs/earthquake-dyfi-response:latest",
+    "start": "./start.sh",
     "test": "echo 'Write some tests' && exit 0"
   },
   "license": "CC0-1.0",
