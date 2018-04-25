@@ -1,82 +1,62 @@
 <?php
 
+// This script must do 4 things:
+// 1. Write to a file
+// 2. Lookup intensity, numresp for this event and location (removed)
+// 3. Compute intensity for this response
+// 4. Output summary HTML
+
+
+
 include_once 'inc/response.inc.php';
 
 // defines the $CONFIG hash of configuration variables
 include_once '../conf/config.inc.php';
 
-if (!isset($ini)) {
 
-	// Process the ini filefile for directory locations and 
-	// credentials to the ArcGISOnline server.
+// for debugging, TODO: remove?
+// $rawData = file_get_contents("php://input");
+// file_put_contents("$log_dir/raw.input",$rawData);
 
-	$ini = parse_ini_file('../conf/config.ini');
-	$data_dir = $ini['WRITE_DIR'];
-	$log_dir = "$data_dir/log";
-        
-	$rawData = file_get_contents("php://input");
-	file_put_contents("$log_dir/raw.input",$rawData);
-}
-
-if (!isset($TEMPLATE)) {
-  $TITLE = 'DYFI Questionnaire Result v{{VERSION}}';
-  $NAVIGATION = true;
-
-  include 'template.inc.php';
-}
-
-// This script must do 4 things:
-// 1. Write to a file
-// 2. Lookup intensity, numresp for this event and location (removed)
-// 3. Compute intensity for this response
-// 4. Output summary HTML 
 
 // Firstly validate the form
 
-$savefile = 1;
 if (!isset($_POST['fldSituation_felt'])) {
-	$savefile = 0;
-	print '<p class="alert warning">' .
-	'Required entries were not provided!' .
-	' Please re-submit the form after answering all required questions.' .
-	'</p>';
-}
+  header('HTTP/1.0 400 Bad Request');
 
-// Fix PHP not parsing multiple checkboxes
+?>
+  <p class="alert warning">
+    Required entries were not provided!
+    Please re-submit the form after answering all required questions.
+  </p>
+<?php
 
-$d_text = array();
-foreach (explode('&',$rawData) as $string) {
-        list($key,$val)=explode('=',$string);
-        if ($key != 'd_text') {
-                continue;
-        }
-        $d_text[] = $val;
-}
-if ($d_text) {
-  $_POST['d_text'] = implode('&d_text[]=',$d_text);
-  unset($_POST['d_text']);
+  return;
 }
 
 // Main loop
 
-$server = $ini['SERVER_SHORTNAME'];
-$backends = explode(',',$ini['BACKEND_SERVERS']);
+$server = $CONFIG['SERVER_SHORTNAME'];
+$backends = explode(',', $CONFIG['BACKEND_SERVERS']);
+$data_dir = $CONFIG['WRITE_DIR'];
+$log_dir = $data_dir . '/log';
+
 
 $eventid = eventid();
-$windowtype = param('windowtype');
-$form_version = param('form_version', '1.1');
-$language = param('language', 'en');
+$form_version = isset($_POST['form_version']) ? $_POST['form_version'] : null;
+$language = isset($_POST['language']) ? $_POST['language'] : 'en';
 
 // Do we need to do a geocode?
-$mapAddress = param('ciim_mapAddress', 'null');
-if ($mapAddress != 'null') {
+$mapAddress = isset($_POST['ciim_mapAddress']) ? $_POST['ciim_mapAddress'] : null;
+if ($mapAddress !== null) {
 	include_once('../lib/geocode.php');
 	try {
-		$client_id = $ini['ARCGIS_CLIENT_ID'];
-	        $client_secret = $ini['ARCGIS_CLIENT_SECRET'];
+		$client_id = $CONFIG['ARCGIS_CLIENT_ID'];
+	        $client_secret = $CONFIG['ARCGIS_CLIENT_SECRET'];
 		geocode($client_id,$client_secret);
 	} catch (Exception $ex) {
-		// Oh well, we tried...
+    // Oh well, we tried...
+    trigger_error($ex->getMessage());
 	}
 }
 
@@ -88,32 +68,45 @@ $count = getmypid();
 // Build $post from $_POST rather than php://input because we may have
 // modified $_POST d_text
 $post = array();
-
-if (is_array($_POST)) {
-	foreach ($_POST as $k=>$v) {
-		if (is_array($v)) {
-			$post[] = "$k=" . implode(' ',$v);
-		} else {
-			$post[] = "$k=$v";
-		}
-	}
+foreach ($_POST as $k => $v) {
+  if (is_array($v)) {
+    // dyfi backend expects custom encoding of arrays
+    $v = implode(' ', $v);
+  }
+  $post[$k] = $v;
 }
+$post['timestamp'] = $time;
+$post['server'] = $server;
 
-$post = str_replace(' ', '+', implode('&', $post));
-$raw = 'timestamp=' . $time . '&server=' . $server . '&' . $post;
+$raw = http_build_query($post);
+
+
+if (!is_dir($log_dir)) {
+  mkdir($log_dir, 0777, true);
+}
 file_put_contents($log_dir . '/latest_entry.post',$raw);
 
-if ($savefile) {
-	$basename = sprintf("entry.%s.%s.%s.%s",
-		$server,$eventid,$time,$count);
+$basename = sprintf("entry.%s.%s.%s.%s",
+  $server,$eventid,$time,$count);
 
-	$out_template = $data_dir . "/incoming.%s/" . $basename;
-	foreach ($backends as $backend) {
-		$dest = sprintf($out_template,$backend);
-		file_put_contents($dest, $raw);
-	}
-	file_put_contents($data_dir . "/backup/" . $basename,$raw);
-} 
+$out_template = $data_dir . "/incoming.%s/" . $basename;
+foreach ($backends as $backend) {
+  $dest = sprintf($out_template,$backend);
+  $dest_dir = dirname($dest);
+  if (!is_dir($dest_dir)) {
+    mkdir($dest_dir, 0777, true);
+  }
+  file_put_contents($dest, $raw);
+}
+
+$dest = $data_dir . "/backup/" . $basename;
+$dest_dir = dirname($dest);
+  if (!is_dir($dest_dir)) {
+  mkdir($dest_dir, 0777, true);
+}
+file_put_contents($dest, $raw);
+
+
 
 // Get language translation
 
@@ -123,9 +116,6 @@ if (!file_exists($translate_file)) {
 }
 include_once($translate_file);
 
-if (!isset($TEMPLATE)) {
-    include 'minimal.inc.php';
-  }
 
 $data = $_POST;
 $data['eventid'] = $eventid;
@@ -139,11 +129,6 @@ if (isset($cdi)) {
 //	$data['all_cdi'] = $lookup['rom_cdi'];
 //	$data['nresp'] = $lookup['nresp'];
 //}
-
-if ($savefile) {
-	echo '<p class="alert success">' . $T['THANKS_LABEL'] . '</p>';
-}
-echo '<dl>';
 
 $OUTPUT = array (
 	'eventid' => $T['EVENTID_LABEL'],
@@ -164,7 +149,8 @@ $OUTPUT = array (
 
 	'filename' => "Output",
 	'form_version' => "Form version",
-); 
+);
+$TO_OUTPUT = array();
 
 foreach($OUTPUT as $key => $desc) {
 	if (!array_key_exists($key, $data)) {
@@ -181,29 +167,32 @@ foreach($OUTPUT as $key => $desc) {
 		if (!$val) {
 			continue;
 		}
-	}
+  }
 
+  $TO_OUTPUT[$key] = $val;
+}
+
+// TODO: output json here
+
+?>
+<!doctype html>
+<html>
+<head>
+  <title><?php echo $T['THANKS_LABEL']; ?></title>
+</head>
+<body>
+
+<?php
+
+echo '<p class="alert success">' . $T['THANKS_LABEL'] . '</p>';
+echo '<dl>';
+
+foreach ($TO_OUTPUT as $key => $val) {
 	// Loop over results and append the rows
-	echo '<dt>' . $desc . '</dt>';
+	echo '<dt>' . $OUTPUT[$key] . '</dt>';
 	echo '<dd>' . htmlspecialchars($val) . '</dd>';
 }
 
 echo '</dl>';
-
-if ($form_version < 1.2) {
-
-	if ($windowtype == 'enabled') {
-		echo '<p><a href="javascript:window.close()">' . $T['CLOSE_LABEL'] . '</a></p>';
-	} else {
-		if (isset($eventid) and $eventid != '' and $eventid <> 'unknown') {
-            echo '<p><a href="https://earthquake.usgs.gov/earthquakes/eventpage/' . $eventid . '#dyfi">' 
-					. $T['BACK_EVENT_LABEL'] 
-					. '</a></p>';
-		} else {
-			echo '<p><a href="https://earthquake.usgs.gov/data/dyfi/">' . $T['BACK_HOMEPAGE_LABEL'] . '</a></p>';
-		}
-	}
-
-}
 
 ?>
