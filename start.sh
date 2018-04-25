@@ -12,4 +12,5 @@ docker run --rm \
     -v $(pwd)/src/conf:/var/www/conf \
     -v $(pwd)/src/htdocs:/var/www/html \
     -v $(pwd)/src/lib:/var/www/lib \
+    $@ \
     usgs/earthquake-dyfi-response:latest
