@@ -3,6 +3,17 @@
 <head>
   <meta charset="utf-8"/>
   <title>Example Form</title>
+  <style>
+    label {
+      display: block;
+      font-weight: bold;
+      margin-top: 1em;
+    }
+
+    [type='submit'] {
+      margin-top: 2em;
+    }
+  </style>
 </head>
 
 <body>
@@ -13,9 +24,20 @@
   </p>
 
   <form action="response.php" method="post">
-  <input type="text" name="fldSituation_felt" value="1_felt"><br>
-  <input type="text" name="fldEffects_shelved" value="1_fell"><br>
-  <input type="submit" name="ciim_report" value="Submit Form">
+    <label for="format">Format</label>
+    <select id="format" name="format">
+      <option value="">HTML</option>
+      <option value="json">JSON</option>
+    </select><br/>
+
+
+    <label for="felt">Felt</label>
+    <input id="felt" type="text" name="fldSituation_felt" value="1_felt"><br/>
+
+    <label for="shelved">Shelved</label>
+    <input type="text" name="fldEffects_shelved" value="1_fell"><br/>
+
+    <input type="submit" name="ciim_report" value="Submit Form">
   </form>
 
 </body>

@@ -153,7 +153,7 @@ $OUTPUT = array (
 	'filename' => "Output",
 	'form_version' => "Form version",
 );
-$TO_OUTPUT = array();
+$OUTPUT_DATA = array();
 
 foreach($OUTPUT as $key => $desc) {
 	if (!array_key_exists($key, $data)) {
@@ -172,10 +172,15 @@ foreach($OUTPUT as $key => $desc) {
 		}
   }
 
-  $TO_OUTPUT[$key] = $val;
+  $OUTPUT_DATA[$key] = $val;
 }
 
-// TODO: output json here
+// output json if requested
+if (isset($_POST['format']) && $_POST['format'] === 'json') {
+  header('Content-type: application/json');
+  echo json_encode($OUTPUT_DATA);
+  exit();
+}
 
 ?>
 <!doctype html>
@@ -190,7 +195,7 @@ foreach($OUTPUT as $key => $desc) {
 echo '<p class="alert success">' . $T['THANKS_LABEL'] . '</p>';
 echo '<dl>';
 
-foreach ($TO_OUTPUT as $key => $val) {
+foreach ($OUTPUT_DATA as $key => $val) {
 	// Loop over results and append the rows
 	echo '<dt>' . $OUTPUT[$key] . '</dt>';
 	echo '<dd>' . htmlspecialchars($val) . '</dd>';
