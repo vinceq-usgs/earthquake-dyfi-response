@@ -188,14 +188,14 @@ node {
     }
 
     stage('Trigger Deploy') {
-      // build(
-      //   job: 'deploy',
-      //   parameters: [
-      //     string(name: 'IMAGE_VERSION', value: IMAGE_VERSION)
-      //   ],
-      //   propagate: false,
-      //   wait: false
-      // )
+      build(
+        job: 'deploy',
+        parameters: [
+          string(name: 'IMAGE_VERSION', value: IMAGE_VERSION)
+        ],
+        propagate: false,
+        wait: false
+      )
     }
   } catch (e) {
     mail to: 'gs-haz_team_group@usgs.gov',
