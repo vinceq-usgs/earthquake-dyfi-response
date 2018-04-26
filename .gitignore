@@ -11,4 +11,5 @@ test/log
 *.swp
 *.log
 export
+backup
 responses

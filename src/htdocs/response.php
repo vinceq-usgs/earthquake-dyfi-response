@@ -38,6 +38,7 @@ if (!isset($_POST['fldSituation_felt'])) {
 
 $server = $CONFIG['SERVER_SHORTNAME'];
 $backends = explode(',', $CONFIG['BACKEND_SERVERS']);
+$backup_dir = $CONFIG['BACKUP_DIR'];
 $data_dir = $CONFIG['WRITE_DIR'];
 $log_dir = $data_dir . '/log';
 
@@ -81,14 +82,24 @@ $post['server'] = $server;
 $raw = http_build_query($post);
 
 
+$basename = sprintf("entry.%s.%s.%s.%s",
+  $server,$eventid,$time,$count);
+
+// write to backup dir first
+$dest = $backup_dir . "/" . $basename;
+$dest_dir = dirname($dest);
+  if (!is_dir($dest_dir)) {
+  mkdir($dest_dir, 0777, true);
+}
+file_put_contents($dest, $raw);
+
+// write to log dir next
 if (!is_dir($log_dir)) {
   mkdir($log_dir, 0777, true);
 }
 file_put_contents($log_dir . '/latest_entry.post',$raw);
 
-$basename = sprintf("entry.%s.%s.%s.%s",
-  $server,$eventid,$time,$count);
-
+// write to backend dirs last
 $out_template = $data_dir . "/incoming.%s/" . $basename;
 foreach ($backends as $backend) {
   $dest = sprintf($out_template,$backend);
@@ -98,14 +109,6 @@ foreach ($backends as $backend) {
   }
   file_put_contents($dest, $raw);
 }
-
-$dest = $data_dir . "/backup/" . $basename;
-$dest_dir = dirname($dest);
-  if (!is_dir($dest_dir)) {
-  mkdir($dest_dir, 0777, true);
-}
-file_put_contents($dest, $raw);
-
 
 
 // Get language translation
