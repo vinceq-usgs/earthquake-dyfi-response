@@ -8,6 +8,7 @@ echo
 
 docker run --rm \
     -p ${CONTAINER_PORT}:80 \
+    -v $(pwd)/backup:/backup \
     -v $(pwd)/responses:/data \
     -v $(pwd)/src/conf:/var/www/conf \
     -v $(pwd)/src/htdocs:/var/www/html \
