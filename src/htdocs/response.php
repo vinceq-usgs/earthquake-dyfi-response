@@ -7,7 +7,6 @@
 // 4. Output summary HTML
 
 
-
 include_once 'inc/response.inc.php';
 
 // defines the $CONFIG hash of configuration variables
@@ -34,37 +33,43 @@ if (!isset($_POST['fldSituation_felt'])) {
   return;
 }
 
+
 // Main loop
 
 $server = $CONFIG['SERVER_SHORTNAME'];
 $backends = explode(',', $CONFIG['BACKEND_SERVERS']);
 $backup_dir = $CONFIG['BACKUP_DIR'];
 $data_dir = $CONFIG['WRITE_DIR'];
-$log_dir = $data_dir . '/log';
+$log_dir = $backup_dir . '/log';
 
-
+$count = getmypid();
 $eventid = eventid();
+$microtime = str_replace('.', '_', microtime(true));
+$time = time();
+
 $form_version = isset($_POST['form_version']) ? $_POST['form_version'] : null;
 $language = isset($_POST['language']) ? $_POST['language'] : 'en';
+$mapAddress = isset($_POST['ciim_mapAddress']) ? $_POST['ciim_mapAddress'] : null;
 
 // Do we need to do a geocode?
-$mapAddress = isset($_POST['ciim_mapAddress']) ? $_POST['ciim_mapAddress'] : null;
 if ($mapAddress !== null) {
-	include_once('../lib/geocode.php');
-	try {
-		$client_id = $CONFIG['ARCGIS_CLIENT_ID'];
-	        $client_secret = $CONFIG['ARCGIS_CLIENT_SECRET'];
-		geocode($client_id,$client_secret);
-	} catch (Exception $ex) {
+  include_once('../lib/geocode.php');
+  try {
+    $client_id = $CONFIG['ARCGIS_CLIENT_ID'];
+    $client_secret = $CONFIG['ARCGIS_CLIENT_SECRET'];
+    $result = geocode($client_id, $client_secret, $mapAddress);
+    if ($result) {
+      $_POST['ciim_mapLat'] = $result['latitude'];
+      $_POST['ciim_mapLon'] = $result['longitude'];
+    }
+  } catch (Exception $ex) {
     // Oh well, we tried...
     trigger_error($ex->getMessage());
-	}
+  }
 }
 
-// Write to file
 
-$time = time();
-$count = getmypid();
+// Write to file
 
 // Build $post from $_POST rather than php://input because we may have
 // modified $_POST d_text
@@ -82,31 +87,27 @@ $post['server'] = $server;
 $raw = http_build_query($post);
 
 
-$basename = sprintf("entry.%s.%s.%s.%s",
-  $server,$eventid,$time,$count);
+// files to be written
+$files = array();
+$basename = "entry.${server}.${eventid}.${microtime}.${count}";
 
-// write to backup dir first
-$dest = $backup_dir . "/" . $basename;
-$dest_dir = dirname($dest);
-  if (!is_dir($dest_dir)) {
-  mkdir($dest_dir, 0777, true);
-}
-file_put_contents($dest, $raw);
+// backup dir first
+$files[] = "${backup_dir}/${basename}";
 
-// write to log dir next
-if (!is_dir($log_dir)) {
-  mkdir($log_dir, 0777, true);
-}
-file_put_contents($log_dir . '/latest_entry.post',$raw);
+// last entry received on this server
+$files[] = "${log_dir}/latest_entry.post";
 
-// write to backend dirs last
-$out_template = $data_dir . "/incoming.%s/" . $basename;
+// one per backend
 foreach ($backends as $backend) {
-  $dest = sprintf($out_template,$backend);
+  $files[] = "${data_dir}/incoming.${backend}/${basename}";
+}
+
+foreach ($files as $dest) {
   $dest_dir = dirname($dest);
   if (!is_dir($dest_dir)) {
     mkdir($dest_dir, 0777, true);
   }
+
   file_put_contents($dest, $raw);
 }
 
@@ -115,7 +116,7 @@ foreach ($backends as $backend) {
 
 $translate_file = 'inc/labels.' . $language . '.inc.php';
 if (!file_exists($translate_file)) {
-	$translate_file = 'inc/labels.en.inc.php';
+  $translate_file = 'inc/labels.en.inc.php';
 }
 include_once($translate_file);
 
@@ -124,7 +125,7 @@ $data = $_POST;
 $data['eventid'] = $eventid;
 $cdi = _rom(compute_intensity());
 if (isset($cdi)) {
-	$data['your_cdi'] = $cdi;
+  $data['your_cdi'] = $cdi;
 }
 
 // Lookup of other entries is disabled for now
@@ -134,49 +135,57 @@ if (isset($cdi)) {
 //}
 
 $OUTPUT = array (
-	'eventid' => $T['EVENTID_LABEL'],
-	'your_cdi' => $T['ESTIMATED_II_LABEL'],
-	'all_cdi' => $T['COMMUNITY_II_LABEL'],
-	'nresp' => $T['NRESP_LABEL'],
-	'ciim_zip' => $T['ZIPCODE_LABEL'],
-	'ciim_city' => $T['CITY_LABEL'],
-	'ciim_region' => $T['REGION_LABEL'],
-	'ciim_country' => $T['COUNTRY_LABEL'],
-	'fldContact_name' => $T['NAME_LABEL'],
-	'fldContact_email' => $T['EMAIL_LABEL'],
-	'fldContact_phone' => $T['PHONE_LABEL'],
-	'ciim_address' => $T['ADDRESS_LABEL'],
-	'ciim_time' => $T['EVENTTIME_LABEL'],
-	'ciim_mapLat' => 'Latitude',
-	'ciim_mapLon' => 'Longitude',
+  'eventid' => $T['EVENTID_LABEL'],
+  'your_cdi' => $T['ESTIMATED_II_LABEL'],
+  'all_cdi' => $T['COMMUNITY_II_LABEL'],
+  'nresp' => $T['NRESP_LABEL'],
+  'ciim_zip' => $T['ZIPCODE_LABEL'],
+  'ciim_city' => $T['CITY_LABEL'],
+  'ciim_region' => $T['REGION_LABEL'],
+  'ciim_country' => $T['COUNTRY_LABEL'],
+  'fldContact_name' => $T['NAME_LABEL'],
+  'fldContact_email' => $T['EMAIL_LABEL'],
+  'fldContact_phone' => $T['PHONE_LABEL'],
+  'ciim_address' => $T['ADDRESS_LABEL'],
+  'ciim_time' => $T['EVENTTIME_LABEL'],
+  'ciim_mapLat' => 'Latitude',
+  'ciim_mapLon' => 'Longitude',
 
-	'filename' => "Output",
-	'form_version' => "Form version",
+  'filename' => "Output",
+  'form_version' => "Form version",
 );
-$TO_OUTPUT = array();
 
+$OUTPUT_DATA = array();
 foreach($OUTPUT as $key => $desc) {
-	if (!array_key_exists($key, $data)) {
-		continue;
-	}
-
-	$val = $data[$key];
-	if (!$val) {
-		continue;
-	}
-
-	if ($key == 'ciim_city' || $key == 'ciim_region' || $key == 'ciim_country') {
-		$val = _strip_code($val);
-		if (!$val) {
-			continue;
-		}
+  if (!array_key_exists($key, $data)) {
+    continue;
   }
 
-  $TO_OUTPUT[$key] = $val;
+  $val = $data[$key];
+  if (!$val) {
+    continue;
+  }
+
+  if ($key == 'ciim_city' || $key == 'ciim_region' || $key == 'ciim_country') {
+    $val = _strip_code($val);
+    if (!$val) {
+      continue;
+    }
+  }
+
+  $OUTPUT_DATA[$key] = $val;
 }
 
-// TODO: output json here
 
+// output json if requested
+if (isset($_POST['format']) && $_POST['format'] === 'json') {
+  header('Content-type: application/json');
+  echo json_encode($OUTPUT_DATA);
+  exit();
+}
+
+
+// otherwise output html
 ?>
 <!doctype html>
 <html>
@@ -190,10 +199,10 @@ foreach($OUTPUT as $key => $desc) {
 echo '<p class="alert success">' . $T['THANKS_LABEL'] . '</p>';
 echo '<dl>';
 
-foreach ($TO_OUTPUT as $key => $val) {
-	// Loop over results and append the rows
-	echo '<dt>' . $OUTPUT[$key] . '</dt>';
-	echo '<dd>' . htmlspecialchars($val) . '</dd>';
+foreach ($OUTPUT_DATA as $key => $val) {
+  // Loop over results and append the rows
+  echo '<dt>' . $OUTPUT[$key] . '</dt>';
+  echo '<dd>' . htmlspecialchars($val) . '</dd>';
 }
 
 echo '</dl>';
