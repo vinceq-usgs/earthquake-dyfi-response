@@ -7,7 +7,6 @@
 // 4. Output summary HTML
 
 
-
 include_once 'inc/response.inc.php';
 
 // defines the $CONFIG hash of configuration variables
@@ -34,16 +33,20 @@ if (!isset($_POST['fldSituation_felt'])) {
   return;
 }
 
+
 // Main loop
 
 $server = $CONFIG['SERVER_SHORTNAME'];
 $backends = explode(',', $CONFIG['BACKEND_SERVERS']);
 $backup_dir = $CONFIG['BACKUP_DIR'];
 $data_dir = $CONFIG['WRITE_DIR'];
-$log_dir = $data_dir . '/log';
+$log_dir = $backup_dir . '/log';
 
-
+$count = getmypid();
 $eventid = eventid();
+$microtime = str_replace('.', '_', microtime(true));
+$time = time();
+
 $form_version = isset($_POST['form_version']) ? $_POST['form_version'] : null;
 $language = isset($_POST['language']) ? $_POST['language'] : 'en';
 
@@ -61,10 +64,8 @@ if ($mapAddress !== null) {
 	}
 }
 
-// Write to file
 
-$time = time();
-$count = getmypid();
+// Write to file
 
 // Build $post from $_POST rather than php://input because we may have
 // modified $_POST d_text
@@ -82,31 +83,27 @@ $post['server'] = $server;
 $raw = http_build_query($post);
 
 
-$basename = sprintf("entry.%s.%s.%s.%s",
-  $server,$eventid,$time,$count);
+// files to be written
+$files = array();
+$basename = "entry.${server}.${eventid}.${microtime}.${count}";
 
-// write to backup dir first
-$dest = $backup_dir . "/" . $basename;
-$dest_dir = dirname($dest);
-  if (!is_dir($dest_dir)) {
-  mkdir($dest_dir, 0777, true);
-}
-file_put_contents($dest, $raw);
+// backup dir first
+$files[] = "${backup_dir}/${basename}";
 
-// write to log dir next
-if (!is_dir($log_dir)) {
-  mkdir($log_dir, 0777, true);
-}
-file_put_contents($log_dir . '/latest_entry.post',$raw);
+// last entry received on this server
+$files[] = "${log_dir}/latest_entry.post";
 
-// write to backend dirs last
-$out_template = $data_dir . "/incoming.%s/" . $basename;
+// one per backend
 foreach ($backends as $backend) {
-  $dest = sprintf($out_template,$backend);
+  $files[] = "${data_dir}/incoming.${backend}/${basename}";
+}
+
+foreach ($files as $dest) {
   $dest_dir = dirname($dest);
   if (!is_dir($dest_dir)) {
     mkdir($dest_dir, 0777, true);
   }
+
   file_put_contents($dest, $raw);
 }
 
@@ -153,8 +150,8 @@ $OUTPUT = array (
 	'filename' => "Output",
 	'form_version' => "Form version",
 );
-$OUTPUT_DATA = array();
 
+$OUTPUT_DATA = array();
 foreach($OUTPUT as $key => $desc) {
 	if (!array_key_exists($key, $data)) {
 		continue;
@@ -175,6 +172,7 @@ foreach($OUTPUT as $key => $desc) {
   $OUTPUT_DATA[$key] = $val;
 }
 
+
 // output json if requested
 if (isset($_POST['format']) && $_POST['format'] === 'json') {
   header('Content-type: application/json');
@@ -182,6 +180,8 @@ if (isset($_POST['format']) && $_POST['format'] === 'json') {
   exit();
 }
 
+
+// otherwise output html
 ?>
 <!doctype html>
 <html>
