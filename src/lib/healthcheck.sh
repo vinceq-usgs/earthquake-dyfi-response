@@ -16,7 +16,7 @@ fi
 # check for responses within the past 5 minutes
 num_responses=$(find $RESPONSES_DIR -mmin -5 -name '*' -type f | wc -l)
 echo "Found ${num_responses} responses in past 5 minutes"
-if [ "$num_responses" != "0" ]; then
+if [ "${num_responses}" != "0" ]; then
   exit 0
 fi
 
@@ -30,17 +30,18 @@ status=$(
         --max-time 5 \
         --output /dev/null \
         --silent \
+        --user-agent "Docker Healthcheck" \
         --write-out "%{http_code}" \
         http://localhost/response.php
 )
-if [ "$status" != "200" ]; then
+if [ "${status}" != "200" ]; then
   echo "Error submitting response, expected 200 got ${status}"
   exit 1
 fi
 
 # expect the response we just sent to be found
 num_responses=$(find $RESPONSES_DIR -mmin -5 -name '*' -type f | wc -l)
-if [ "$num_responses" != "0" ]; then
+if [ "${num_responses}" != "0" ]; then
   echo "Response submitted successfully"
   exit 0
 fi
