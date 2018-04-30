@@ -108,7 +108,12 @@ foreach ($files as $dest) {
     mkdir($dest_dir, 0777, true);
   }
 
-  file_put_contents($dest, $raw);
+  $success = file_put_contents($dest, $raw);
+
+  if ($success === false) {
+    header("HTTP/1.1 500 Internal Server Error");
+    exit();
+  }
 }
 
 
