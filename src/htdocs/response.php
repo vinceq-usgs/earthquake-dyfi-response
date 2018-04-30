@@ -93,13 +93,10 @@ $basename = "entry.${server}.${eventid}.${microtime}.${count}";
 // backup dir first
 $files[] = "${backup_dir}/${basename}";
 
-
 // one per backend
 foreach ($backends as $backend) {
   $files[] = "${data_dir}/incoming.${backend}/${basename}";
 }
-
-$success = false;
 
 foreach ($files as $dest) {
   $dest_dir = dirname($dest);
@@ -107,16 +104,13 @@ foreach ($files as $dest) {
     mkdir($dest_dir, 0777, true);
   }
 
-  if (file_put_contents($dest, $raw) !== false) {
-    $success = true;
+  if (file_put_contents($dest, $raw) === false) {
+    header("HTTP/1.1 500 Internal Server Error");
+    echo "Something went wrong, please contact us and reference the \"DYFI Form\" with this id: ${basename}";
+    exit();
   }
 }
 
-// None of the responses were written
-if ($success === false) {
-  header("HTTP/1.1 500 Internal Server Error");
-  exit();
-}
 
 // Get language translation
 
