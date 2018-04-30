@@ -1,21 +1,24 @@
 #! /bin/bash
 
 ## Health check script for docker container
-# Check for recent responses.
+# Check for recent responses (within RESPONSE_MAX_AGE_MINUTES minutes).
 # If no recent responses are found, send one and check again.
 
 
 BACKUP_DIR=${BACKUP_DIR:-'/backup'}
 RESPONSES_DIR="${BACKUP_DIR}/responses"
+RESPONSE_MAX_AGE_MINUTES=1
+
+
 if [ ! -d $RESPONSES_DIR ]; then
   mkdir -p $RESPONSES_DIR
   chmod 777 $RESPONSES_DIR
 fi
 
 
-# check for responses within the past 5 minutes
-num_responses=$(find $RESPONSES_DIR -mmin -5 -name '*' -type f | wc -l)
-echo "Found ${num_responses} responses in past 5 minutes"
+# check for responses within the past minute
+num_responses=$(find $RESPONSES_DIR -mmin -${RESPONSE_MAX_AGE_MINUTES} -name '*' -type f | wc -l)
+echo "Found ${num_responses} responses in past ${RESPONSE_MAX_AGE_MINUTES} minutes"
 if [ "${num_responses}" != "0" ]; then
   exit 0
 fi
@@ -40,7 +43,7 @@ if [ "${status}" != "200" ]; then
 fi
 
 # expect the response we just sent to be found
-num_responses=$(find $RESPONSES_DIR -mmin -5 -name '*' -type f | wc -l)
+num_responses=$(find $RESPONSES_DIR -mmin -${RESPONSE_MAX_AGE_MINUTES} -name '*' -type f | wc -l)
 if [ "${num_responses}" != "0" ]; then
   echo "Response submitted successfully"
   exit 0
