@@ -10,3 +10,4 @@ COPY src/lib/ /var/www/lib/
 
 
 EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=15s --start-period=30s --retries=1 CMD [ "/var/www/lib/healthcheck.sh" ]
