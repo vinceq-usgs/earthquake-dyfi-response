@@ -40,7 +40,6 @@ $server = $CONFIG['SERVER_SHORTNAME'];
 $backends = explode(',', $CONFIG['BACKEND_SERVERS']);
 $backup_dir = $CONFIG['BACKUP_DIR'] . '/responses';
 $data_dir = $CONFIG['WRITE_DIR'];
-$log_dir = $CONFIG['BACKUP_DIR'] . '/log';
 
 $count = getmypid();
 $eventid = eventid();
@@ -94,13 +93,13 @@ $basename = "entry.${server}.${eventid}.${microtime}.${count}";
 // backup dir first
 $files[] = "${backup_dir}/${basename}";
 
-// last entry received on this server
-$files[] = "${log_dir}/latest_entry.post";
 
 // one per backend
 foreach ($backends as $backend) {
   $files[] = "${data_dir}/incoming.${backend}/${basename}";
 }
+
+$success = false;
 
 foreach ($files as $dest) {
   $dest_dir = dirname($dest);
@@ -108,14 +107,16 @@ foreach ($files as $dest) {
     mkdir($dest_dir, 0777, true);
   }
 
-  $success = file_put_contents($dest, $raw);
-
-  if ($success === false) {
-    header("HTTP/1.1 500 Internal Server Error");
-    exit();
+  if (file_put_contents($dest, $raw) !== false) {
+    $success = true;
   }
 }
 
+// None of the responses were written
+if ($success === false) {
+  header("HTTP/1.1 500 Internal Server Error");
+  exit();
+}
 
 // Get language translation
 
