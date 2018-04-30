@@ -38,9 +38,9 @@ if (!isset($_POST['fldSituation_felt'])) {
 
 $server = $CONFIG['SERVER_SHORTNAME'];
 $backends = explode(',', $CONFIG['BACKEND_SERVERS']);
-$backup_dir = $CONFIG['BACKUP_DIR'];
+$backup_dir = $CONFIG['BACKUP_DIR'] . '/responses';
 $data_dir = $CONFIG['WRITE_DIR'];
-$log_dir = $backup_dir . '/log';
+$log_dir = $CONFIG['BACKUP_DIR'] . '/log';
 
 $count = getmypid();
 $eventid = eventid();
@@ -52,7 +52,7 @@ $language = isset($_POST['language']) ? $_POST['language'] : 'en';
 $mapAddress = isset($_POST['ciim_mapAddress']) ? $_POST['ciim_mapAddress'] : null;
 
 // Do we need to do a geocode?
-if ($mapAddress !== null) {
+if ($mapAddress !== null && $mapAddress !== 'null') {
   include_once('../lib/geocode.php');
   try {
     $client_id = $CONFIG['ARCGIS_CLIENT_ID'];
