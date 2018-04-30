@@ -40,7 +40,6 @@ $server = $CONFIG['SERVER_SHORTNAME'];
 $backends = explode(',', $CONFIG['BACKEND_SERVERS']);
 $backup_dir = $CONFIG['BACKUP_DIR'] . '/responses';
 $data_dir = $CONFIG['WRITE_DIR'];
-$log_dir = $CONFIG['BACKUP_DIR'] . '/log';
 
 $count = getmypid();
 $eventid = eventid();
@@ -94,9 +93,6 @@ $basename = "entry.${server}.${eventid}.${microtime}.${count}";
 // backup dir first
 $files[] = "${backup_dir}/${basename}";
 
-// last entry received on this server
-$files[] = "${log_dir}/latest_entry.post";
-
 // one per backend
 foreach ($backends as $backend) {
   $files[] = "${data_dir}/incoming.${backend}/${basename}";
@@ -108,7 +104,11 @@ foreach ($files as $dest) {
     mkdir($dest_dir, 0777, true);
   }
 
-  file_put_contents($dest, $raw);
+  if (file_put_contents($dest, $raw) === false) {
+    header("HTTP/1.1 500 Internal Server Error");
+    echo "Something went wrong, please contact us and reference the \"DYFI Form\" with this id: ${basename}";
+    exit();
+  }
 }
 
 
