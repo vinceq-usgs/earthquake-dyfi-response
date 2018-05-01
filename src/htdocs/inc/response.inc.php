@@ -211,5 +211,11 @@
     return substr($string,$c+1);
   }
 
+  // remove array of files
+  function removeResponses ($files) {
+    foreach ($files as $file) {
+      unlink($file);
+    }
+  }
 
 ?>
