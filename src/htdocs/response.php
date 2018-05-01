@@ -106,11 +106,10 @@ foreach ($files as $dest) {
   }
 
   if (file_put_contents($dest, $raw) === false) {
+    // generate 500 and return html or json
+    generateError($_POST['format'], $basename);
     // remove all previously stored responses
     removeResponses($addedFiles);
-    // return a 500 server error
-    header("HTTP/1.1 500 Internal Server Error");
-    echo "Something went wrong, please contact us and reference the \"DYFI Form\" with this id: ${basename}";
     exit();
   } else {
     // keep track of responses that have been saved

@@ -218,4 +218,28 @@
     }
   }
 
+  // generate error response in html or json
+  function generateError ($format, $basename) {
+    $message = "Something went wrong, please " .
+        "<a href=\"mailto:gs-haz_dev_team_group@usgs.gov?subject=Error " .
+        "Processing DYFI Form ${basename}\">contact us</a> to report this " .
+        "problem!";
+
+    header("HTTP/1.1 500 Internal Server Error");
+
+    if ($format && $format === 'json') {
+      $error = [
+        'error' => [
+          'code' => 500,
+          'message' => $message
+        ]
+      ];
+      header('Content-Type: application/json');
+      echo json_encode($error);
+    } else {
+      // return a 500 server error
+      echo '<p>' . $message . '</p>';
+    }
+  }
+
 ?>
