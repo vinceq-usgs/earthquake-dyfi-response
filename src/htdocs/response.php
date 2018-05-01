@@ -88,6 +88,7 @@ $raw = http_build_query($post);
 
 // files to be written
 $files = array();
+$addedFiles = array();
 $basename = "entry.${server}.${eventid}.${microtime}.${count}";
 
 // backup dir first
@@ -105,9 +106,15 @@ foreach ($files as $dest) {
   }
 
   if (file_put_contents($dest, $raw) === false) {
+    // remove all previously stored responses
+    removeResponses($addedFiles);
+    // return a 500 server error
     header("HTTP/1.1 500 Internal Server Error");
     echo "Something went wrong, please contact us and reference the \"DYFI Form\" with this id: ${basename}";
     exit();
+  } else {
+    // keep track of responses that have been saved
+    $addedFiles[] = $dest;
   }
 }
 
