@@ -211,18 +211,12 @@
     return substr($string,$c+1);
   }
 
-  // remove array of files
-  function removeResponses ($files) {
-    foreach ($files as $file) {
-      unlink($file);
-    }
-  }
-
   // generate error response in html or json
   function generateError ($format, $basename) {
+    $email = 'gs-haz_dev_team_group@usgs.gov';
+    $subject = urlencode('Error Processing DYFI Form ' . $basename);
     $message = "Something went wrong, please " .
-        "<a href=\"mailto:gs-haz_dev_team_group@usgs.gov?subject=Error " .
-        "Processing DYFI Form ${basename}\">contact us</a> to report this " .
+        "<a href=\"mailto:${email}?subject=${subject}\">contact us</a> to report this " .
         "problem!";
 
     header("HTTP/1.1 500 Internal Server Error");
@@ -238,7 +232,7 @@
       echo json_encode($error);
     } else {
       // return a 500 server error
-      echo '<p>' . $message . '</p>';
+      echo '<p class="alert warning">' . $message . '</p>';
     }
   }
 

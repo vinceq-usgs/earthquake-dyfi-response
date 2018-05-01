@@ -88,7 +88,6 @@ $raw = http_build_query($post);
 
 // files to be written
 $files = array();
-$addedFiles = array();
 $basename = "entry.${server}.${eventid}.${microtime}.${count}";
 
 // backup dir first
@@ -108,12 +107,7 @@ foreach ($files as $dest) {
   if (file_put_contents($dest, $raw) === false) {
     // generate 500 and return html or json
     generateError($_POST['format'], $basename);
-    // remove all previously stored responses
-    removeResponses($addedFiles);
     exit();
-  } else {
-    // keep track of responses that have been saved
-    $addedFiles[] = $dest;
   }
 }
 
